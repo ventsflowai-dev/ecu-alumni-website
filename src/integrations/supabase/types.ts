@@ -14,16 +14,445 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      announcements: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          status: Database["public"]["Enums"]["post_status"]
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          status?: Database["public"]["Enums"]["post_status"]
+          title: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          status?: Database["public"]["Enums"]["post_status"]
+          title?: string
+        }
+        Relationships: []
+      }
+      blog_posts: {
+        Row: {
+          author_id: string | null
+          category: string | null
+          content: string | null
+          created_at: string
+          excerpt: string | null
+          featured_image_url: string | null
+          id: string
+          slug: string
+          status: Database["public"]["Enums"]["post_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          category?: string | null
+          content?: string | null
+          created_at?: string
+          excerpt?: string | null
+          featured_image_url?: string | null
+          id?: string
+          slug: string
+          status?: Database["public"]["Enums"]["post_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          category?: string | null
+          content?: string | null
+          created_at?: string
+          excerpt?: string | null
+          featured_image_url?: string | null
+          id?: string
+          slug?: string
+          status?: Database["public"]["Enums"]["post_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      contact_messages: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          message: string
+          status: Database["public"]["Enums"]["message_status"]
+          subject: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          message: string
+          status?: Database["public"]["Enums"]["message_status"]
+          subject?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          message?: string
+          status?: Database["public"]["Enums"]["message_status"]
+          subject?: string | null
+        }
+        Relationships: []
+      }
+      donation_campaigns: {
+        Row: {
+          amount_raised: number
+          created_at: string
+          description: string | null
+          featured_image_url: string | null
+          id: string
+          slug: string
+          status: Database["public"]["Enums"]["campaign_status"]
+          suggested_amounts: number[] | null
+          target_amount: number | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          amount_raised?: number
+          created_at?: string
+          description?: string | null
+          featured_image_url?: string | null
+          id?: string
+          slug: string
+          status?: Database["public"]["Enums"]["campaign_status"]
+          suggested_amounts?: number[] | null
+          target_amount?: number | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          amount_raised?: number
+          created_at?: string
+          description?: string | null
+          featured_image_url?: string | null
+          id?: string
+          slug?: string
+          status?: Database["public"]["Enums"]["campaign_status"]
+          suggested_amounts?: number[] | null
+          target_amount?: number | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      donations: {
+        Row: {
+          amount: number
+          campaign_id: string | null
+          created_at: string
+          currency: string
+          donor_email: string
+          donor_message: string | null
+          donor_name: string
+          donor_phone: string | null
+          flutterwave_transaction_id: string | null
+          id: string
+          payment_reference: string | null
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          receipt_number: string | null
+          receipt_pdf_url: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          campaign_id?: string | null
+          created_at?: string
+          currency?: string
+          donor_email: string
+          donor_message?: string | null
+          donor_name: string
+          donor_phone?: string | null
+          flutterwave_transaction_id?: string | null
+          id?: string
+          payment_reference?: string | null
+          payment_status?: Database["public"]["Enums"]["payment_status"]
+          receipt_number?: string | null
+          receipt_pdf_url?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          campaign_id?: string | null
+          created_at?: string
+          currency?: string
+          donor_email?: string
+          donor_message?: string | null
+          donor_name?: string
+          donor_phone?: string | null
+          flutterwave_transaction_id?: string | null
+          id?: string
+          payment_reference?: string | null
+          payment_status?: Database["public"]["Enums"]["payment_status"]
+          receipt_number?: string | null
+          receipt_pdf_url?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donations_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "donation_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          created_at: string
+          event_date: string | null
+          event_status: Database["public"]["Enums"]["event_timing"]
+          event_time: string | null
+          featured_image_url: string | null
+          full_description: string | null
+          id: string
+          location: string | null
+          registration_link: string | null
+          short_description: string | null
+          slug: string
+          status: Database["public"]["Enums"]["post_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_date?: string | null
+          event_status?: Database["public"]["Enums"]["event_timing"]
+          event_time?: string | null
+          featured_image_url?: string | null
+          full_description?: string | null
+          id?: string
+          location?: string | null
+          registration_link?: string | null
+          short_description?: string | null
+          slug: string
+          status?: Database["public"]["Enums"]["post_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_date?: string | null
+          event_status?: Database["public"]["Enums"]["event_timing"]
+          event_time?: string | null
+          featured_image_url?: string | null
+          full_description?: string | null
+          id?: string
+          location?: string | null
+          registration_link?: string | null
+          short_description?: string | null
+          slug?: string
+          status?: Database["public"]["Enums"]["post_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      gallery_events: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string
+          description: string | null
+          event_date: string | null
+          id: string
+          location: string | null
+          slug: string
+          status: Database["public"]["Enums"]["post_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          event_date?: string | null
+          id?: string
+          location?: string | null
+          slug: string
+          status?: Database["public"]["Enums"]["post_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          event_date?: string | null
+          id?: string
+          location?: string | null
+          slug?: string
+          status?: Database["public"]["Enums"]["post_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      gallery_images: {
+        Row: {
+          caption: string | null
+          created_at: string
+          gallery_event_id: string
+          id: string
+          image_url: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          gallery_event_id: string
+          id?: string
+          image_url: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          gallery_event_id?: string
+          id?: string
+          image_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gallery_images_gallery_event_id_fkey"
+            columns: ["gallery_event_id"]
+            isOneToOne: false
+            referencedRelation: "gallery_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          bio: string | null
+          created_at: string
+          current_city: string | null
+          current_country: string | null
+          department: string | null
+          directory_consent: boolean
+          email: string
+          faculty: string | null
+          full_name: string
+          graduation_year: number | null
+          id: string
+          phone: string | null
+          profession: string | null
+          profile_photo_url: string | null
+          show_email_publicly: boolean
+          show_phone_publicly: boolean
+          social_links: Json | null
+          status: Database["public"]["Enums"]["profile_status"]
+          updated_at: string
+          user_id: string
+          workplace: string | null
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          current_city?: string | null
+          current_country?: string | null
+          department?: string | null
+          directory_consent?: boolean
+          email?: string
+          faculty?: string | null
+          full_name?: string
+          graduation_year?: number | null
+          id?: string
+          phone?: string | null
+          profession?: string | null
+          profile_photo_url?: string | null
+          show_email_publicly?: boolean
+          show_phone_publicly?: boolean
+          social_links?: Json | null
+          status?: Database["public"]["Enums"]["profile_status"]
+          updated_at?: string
+          user_id: string
+          workplace?: string | null
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          current_city?: string | null
+          current_country?: string | null
+          department?: string | null
+          directory_consent?: boolean
+          email?: string
+          faculty?: string | null
+          full_name?: string
+          graduation_year?: number | null
+          id?: string
+          phone?: string | null
+          profession?: string | null
+          profile_photo_url?: string | null
+          show_email_publicly?: boolean
+          show_phone_publicly?: boolean
+          social_links?: Json | null
+          status?: Database["public"]["Enums"]["profile_status"]
+          updated_at?: string
+          user_id?: string
+          workplace?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "member"
+      campaign_status: "active" | "inactive"
+      event_timing: "upcoming" | "past"
+      message_status: "unread" | "read"
+      payment_status: "pending" | "successful" | "failed"
+      post_status: "draft" | "published"
+      profile_status: "pending" | "approved" | "suspended"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +579,14 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "member"],
+      campaign_status: ["active", "inactive"],
+      event_timing: ["upcoming", "past"],
+      message_status: ["unread", "read"],
+      payment_status: ["pending", "successful", "failed"],
+      post_status: ["draft", "published"],
+      profile_status: ["pending", "approved", "suspended"],
+    },
   },
 } as const
