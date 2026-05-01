@@ -25,16 +25,24 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!user) return;
-    (async () => {
-      const { data: p } = await supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
-      setProfile(p);
-      const { data: d } = await supabase.from("donations").select("*, donation_campaigns(title)").eq("user_id", user.id).order("created_at", { ascending: false });
-      setDonations(d ?? []);
-      const { data: a } = await supabase.from("announcements").select("*").eq("status", "published").order("created_at", { ascending: false }).limit(10);
-      setAnnouncements(a ?? []);
-      const { data: ev } = await supabase.from("events").select("*").eq("status", "published").eq("event_status", "upcoming").order("event_date").limit(5);
-      setEvents(ev ?? []);
-    })();
+    // Load profile (critical — unblocks the page)
+    supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle().then(({ data, error }) => {
+      if (error) toast.error("Could not load profile: " + error.message);
+      setProfile(data ?? { user_id: user.id, full_name: "", email: user.email ?? "", status: "pending", directory_consent: false, show_email_publicly: false, show_phone_publicly: false });
+    });
+    // Load donations + resolve campaign titles separately (no FK declared)
+    supabase.from("donations").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).then(async ({ data }) => {
+      const list = data ?? [];
+      const ids = Array.from(new Set(list.map((d: any) => d.campaign_id).filter(Boolean)));
+      let titleMap: Record<string, string> = {};
+      if (ids.length) {
+        const { data: camps } = await supabase.from("donation_campaigns").select("id,title").in("id", ids);
+        (camps ?? []).forEach((c: any) => { titleMap[c.id] = c.title; });
+      }
+      setDonations(list.map((d: any) => ({ ...d, donation_campaigns: d.campaign_id ? { title: titleMap[d.campaign_id] } : null })));
+    });
+    supabase.from("announcements").select("*").eq("status", "published").order("created_at", { ascending: false }).limit(10).then(({ data }) => setAnnouncements(data ?? []));
+    supabase.from("events").select("*").eq("status", "published").eq("event_status", "upcoming").order("event_date").limit(5).then(({ data }) => setEvents(data ?? []));
   }, [user]);
 
   const updateField = (k: string, v: any) => setProfile((p: any) => ({ ...p, [k]: v }));
