@@ -444,6 +444,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      set_profile_status: {
+        Args: {
+          _status: Database["public"]["Enums"]["profile_status"]
+          _user_id: string
+        }
+        Returns: undefined
+      }
+      set_user_admin: {
+        Args: { _make_admin: boolean; _user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "member"
