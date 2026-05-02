@@ -12,7 +12,7 @@ interface Profile {
   user_id: string;
   full_name: string;
   email: string;
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "suspended";
   graduation_year: number | null;
   current_city: string | null;
   profession: string | null;
@@ -40,7 +40,7 @@ export const MembersPanel = () => {
 
   useEffect(() => { load(); }, []);
 
-  const setStatus = async (user_id: string, status: "approved" | "pending" | "rejected") => {
+  const setStatus = async (user_id: string, status: "approved" | "pending" | "suspended") => {
     setBusy(user_id);
     const { error } = await supabase.rpc("set_profile_status", { _user_id: user_id, _status: status });
     setBusy(null);
@@ -112,9 +112,9 @@ export const MembersPanel = () => {
                           <Check className="h-3.5 w-3.5 mr-1" />Approve
                         </Button>
                       )}
-                      {p.status !== "rejected" && (
-                        <Button size="sm" variant="outline" disabled={busy === p.user_id} onClick={() => setStatus(p.user_id, "rejected")}>
-                          <X className="h-3.5 w-3.5 mr-1" />Reject
+                      {p.status !== "suspended" && (
+                        <Button size="sm" variant="outline" disabled={busy === p.user_id} onClick={() => setStatus(p.user_id, "suspended")}>
+                          <X className="h-3.5 w-3.5 mr-1" />Suspend
                         </Button>
                       )}
                       <Button size="sm" variant="outline" disabled={busy === p.user_id} onClick={() => toggleAdmin(p.user_id, !isAdmin)}>
