@@ -5,6 +5,15 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import CMSLayout from "./pages/cms/CMSLayout";
+import CMSDashboard from "./pages/cms/CMSDashboard";
+import CMSBlog from "./pages/cms/CMSBlog";
+import CMSEvents from "./pages/cms/CMSEvents";
+import CMSGallery from "./pages/cms/CMSGallery";
+import CMSDonationCampaigns from "./pages/cms/CMSDonationCampaigns";
+import CMSAnnouncements from "./pages/cms/CMSAnnouncements";
+import CMSMembers from "./pages/cms/CMSMembers";
+
 
 import Index from "./pages/Index";
 import About from "./pages/About";
@@ -47,6 +56,15 @@ const App = () => (
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute adminOnly><Admin /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
+            <Route path="/cms" element={<CMSLayout />}>
+  <Route index element={<CMSDashboard />} />
+  <Route path="blog" element={<CMSBlog />} />
+  <Route path="events" element={<CMSEvents />} />
+   <Route path="gallery" element={<CMSGallery />} />
+    <Route path="donation-campaigns" element={<CMSDonationCampaigns />} />
+     <Route path="announcements" element={<CMSAnnouncements />} />
+     <Route path="members" element={<CMSMembers />} />
+</Route>
           </Routes>
         </AuthProvider>
       </BrowserRouter>

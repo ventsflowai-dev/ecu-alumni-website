@@ -12,7 +12,7 @@ const Directory = () => {
 
   useEffect(() => {
     supabase.from("profiles")
-      .select("id,full_name,graduation_year,department,faculty,profession,current_city,current_country,profile_photo_url,bio")
+      .select("id,full_name,email,phone,graduation_year,department,faculty,profession,current_city,current_country,profile_photo_url,bio,show_email_publicly,show_phone_publicly")
       .eq("status", "approved").eq("directory_consent", true)
       .order("full_name")
       .then(({ data }) => setMembers(data ?? []));
@@ -54,11 +54,40 @@ const Directory = () => {
                 </Avatar>
                 <h3 className="font-display text-lg font-bold mb-1">{m.full_name}</h3>
                 {m.graduation_year && <div className="text-xs text-accent font-semibold mb-3">Class of {m.graduation_year}</div>}
-                <ul className="text-xs text-muted-foreground space-y-1.5">
-                  {m.department && <li className="flex items-center justify-center gap-1.5"><GraduationCap className="h-3 w-3" />{m.department}</li>}
-                  {m.profession && <li className="flex items-center justify-center gap-1.5"><Briefcase className="h-3 w-3" />{m.profession}</li>}
-                  {(m.current_city || m.current_country) && <li className="flex items-center justify-center gap-1.5"><MapPin className="h-3 w-3" />{[m.current_city, m.current_country].filter(Boolean).join(", ")}</li>}
-                </ul>
+               <ul className="text-xs text-muted-foreground space-y-1.5">
+  {m.department && (
+    <li className="flex items-center justify-center gap-1.5">
+      <GraduationCap className="h-3 w-3" />
+      {m.department}
+    </li>
+  )}
+
+  {m.profession && (
+    <li className="flex items-center justify-center gap-1.5">
+      <Briefcase className="h-3 w-3" />
+      {m.profession}
+    </li>
+  )}
+
+  {(m.current_city || m.current_country) && (
+    <li className="flex items-center justify-center gap-1.5">
+      <MapPin className="h-3 w-3" />
+      {[m.current_city, m.current_country].filter(Boolean).join(", ")}
+    </li>
+  )}
+
+  {m.show_email_publicly && m.email && (
+    <li className="flex items-center justify-center gap-1.5">
+      Email: {m.email}
+    </li>
+  )}
+
+  {m.show_phone_publicly && m.phone && (
+    <li className="flex items-center justify-center gap-1.5">
+      Phone: {m.phone}
+    </li>
+  )}
+</ul>
               </Card>
             ))}
           </div>
