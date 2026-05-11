@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Upload, Save, Edit, Trash2, Calendar, MapPin, Eye, ImageIcon, Loader2 } from "lucide-react";
 
 type EventItem = {
   id: string;
@@ -289,229 +297,330 @@ export default function CMSGallery() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="grid lg:grid-cols-2 gap-8">
-        <section className="bg-white border rounded-xl p-6">
-          <h1 className="text-xl font-bold mb-4">
-            {editingId ? "Edit Gallery Album" : "Create Gallery Album"}
-          </h1>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="grid lg:grid-cols-12 gap-8">
+        <section className="lg:col-span-6">
+          <Card className="border-slate-200/60 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-xl font-display">
+                {editingId ? "Edit Gallery Album" : "Create Gallery Album"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={saveGalleryEvent} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="event_id">Link to Event</Label>
+                  <Select
+                    value={form.event_id || "standalone"}
+                    onValueChange={handleEventSelect}
+                  >
+                    <SelectTrigger id="event_id">
+                      <SelectValue placeholder="Select an event" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="standalone">Standalone Gallery</SelectItem>
+                      {events.map((event) => (
+                        <SelectItem key={event.id} value={event.id}>
+                          {event.title} {event.event_date ? `(${event.event_date})` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-          <form onSubmit={saveGalleryEvent} className="space-y-4">
-            <select
-              className="w-full border rounded-lg p-3"
-              value={form.event_id || "standalone"}
-              onChange={(e) => handleEventSelect(e.target.value)}
-            >
-              <option value="standalone">Standalone Gallery</option>
-              {events.map((event) => (
-                <option key={event.id} value={event.id}>
-                  {event.title} {event.event_date ? `(${event.event_date})` : ""}
-                </option>
-              ))}
-            </select>
-
-            <input
-              className="w-full border rounded-lg p-3"
-              placeholder="Gallery Title"
-              value={form.title}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  title: e.target.value,
-                  slug: generateSlug(e.target.value),
-                })
-              }
-              required
-            />
-
-            <input
-              className="w-full border rounded-lg p-3"
-              placeholder="Slug"
-              value={form.slug}
-              onChange={(e) => setForm({ ...form, slug: e.target.value })}
-            />
-
-            <input
-              type="date"
-              className="w-full border rounded-lg p-3"
-              value={form.event_date}
-              onChange={(e) => setForm({ ...form, event_date: e.target.value })}
-            />
-
-            <input
-              className="w-full border rounded-lg p-3"
-              placeholder="Location"
-              value={form.location}
-              onChange={(e) => setForm({ ...form, location: e.target.value })}
-            />
-
-            <textarea
-              className="w-full border rounded-lg p-3 min-h-32"
-              placeholder="Description"
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-            />
-
-            {!form.event_id && (
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Cover Image
-                </label>
-
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="w-full border rounded-lg p-3"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) uploadCoverImage(file);
-                  }}
-                />
-              </div>
-            )}
-
-            {form.cover_image_url && (
-              <img
-                src={form.cover_image_url}
-                alt="Cover preview"
-                className="h-40 w-full object-cover rounded-lg border"
-              />
-            )}
-
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Gallery Images
-              </label>
-
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                className="w-full border rounded-lg p-3"
-                onChange={(e) => {
-                  const files = e.target.files;
-                  if (files) setPendingImages(Array.from(files));
-                }}
-              />
-
-              {pendingImages.length > 0 && (
-                <p className="text-sm text-slate-500 mt-2">
-                  {pendingImages.length} image(s) selected
-                </p>
-              )}
-            </div>
-
-            <input
-              className="w-full border rounded-lg p-3"
-              placeholder="Caption for selected images"
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-            />
-
-            <select
-              className="w-full border rounded-lg p-3"
-              value={form.status}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  status: e.target.value as "draft" | "published",
-                })
-              }
-            >
-              <option value="draft">Draft</option>
-              <option value="published">Published</option>
-            </select>
-
-            <button
-              disabled={uploading}
-              className="bg-blue-950 text-white px-5 py-3 rounded-lg disabled:opacity-50"
-            >
-              {uploading
-                ? "Saving..."
-                : editingId
-                ? "Update Album"
-                : "Create Album"}
-            </button>
-          </form>
-        </section>
-
-        <section>
-          <h2 className="text-xl font-bold mb-4">Gallery Albums</h2>
-
-          <div className="space-y-3">
-            {galleryEvents.map((item) => (
-              <div key={item.id} className="bg-white border rounded-xl p-4">
-                {item.cover_image_url && (
-                  <img
-                    src={item.cover_image_url}
-                    alt={item.title}
-                    className="h-32 w-full object-cover rounded-lg mb-3"
+                <div className="space-y-2">
+                  <Label htmlFor="title">Gallery Title</Label>
+                  <Input
+                    id="title"
+                    placeholder="Enter gallery title"
+                    value={form.title}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        title: e.target.value,
+                        slug: generateSlug(e.target.value),
+                      })
+                    }
+                    required
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="slug">Slug</Label>
+                  <Input
+                    id="slug"
+                    placeholder="gallery-url-slug"
+                    value={form.slug}
+                    onChange={(e) => setForm({ ...form, slug: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="event_date">Date</Label>
+                    <Input
+                      id="event_date"
+                      type="date"
+                      value={form.event_date}
+                      onChange={(e) => setForm({ ...form, event_date: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                      id="location"
+                      placeholder="e.g. Main Auditorium"
+                      value={form.location}
+                      onChange={(e) => setForm({ ...form, location: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="A short description of this album..."
+                    value={form.description}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    rows={3}
+                  />
+                </div>
+
+                {!form.event_id && (
+                  <div className="space-y-2">
+                    <Label>Cover Image</Label>
+                    <div className="flex items-center gap-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => document.getElementById('cover_image')?.click()}
+                        disabled={uploading}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        {uploading ? "Uploading..." : "Upload Cover"}
+                      </Button>
+                      <input
+                        id="cover_image"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) uploadCoverImage(file);
+                        }}
+                      />
+                    </div>
+                  </div>
                 )}
 
-                <h3 className="font-semibold">{item.title}</h3>
+                {form.cover_image_url && (
+                  <div className="mt-4 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 relative aspect-video">
+                    <img
+                      src={form.cover_image_url}
+                      alt="Cover preview"
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  </div>
+                )}
 
-                <p className="text-sm text-slate-500">
-                  {item.event_date || "No date"} • {item.status}
-                </p>
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-blue-700 font-semibold flex items-center gap-2">
+                      <ImageIcon className="h-4 w-4" /> Add Album Images
+                    </Label>
+                    <div className="flex items-center gap-4">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => document.getElementById('album_images')?.click()}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Select Images
+                      </Button>
+                      <input
+                        id="album_images"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => {
+                          const files = e.target.files;
+                          if (files) setPendingImages(Array.from(files));
+                        }}
+                      />
+                      {pendingImages.length > 0 && (
+                        <span className="text-sm font-medium text-slate-700 bg-white px-3 py-1 rounded-full border shadow-sm">
+                          {pendingImages.length} selected
+                        </span>
+                      )}
+                    </div>
+                  </div>
 
-                <div className="flex flex-wrap gap-2 mt-3">
-                  <button
-                    onClick={() => selectGallery(item)}
-                    className="px-3 py-2 bg-blue-950 text-white rounded"
-                  >
-                    View Images
-                  </button>
-
-                  <button
-                    onClick={() => editGalleryEvent(item)}
-                    className="px-3 py-2 bg-slate-100 rounded"
-                  >
-                    Edit
-                  </button>
-
-                  <button
-                    onClick={() => deleteGalleryEvent(item.id!)}
-                    className="px-3 py-2 bg-red-600 text-white rounded"
-                  >
-                    Delete
-                  </button>
+                  {pendingImages.length > 0 && (
+                    <div className="space-y-2">
+                      <Label htmlFor="caption">Caption for these images</Label>
+                      <Input
+                        id="caption"
+                        placeholder="Optional caption applied to all selected images"
+                        value={caption}
+                        onChange={(e) => setCaption(e.target.value)}
+                      />
+                    </div>
+                  )}
                 </div>
-              </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="status">Publish Status</Label>
+                  <Select
+                    value={form.status}
+                    onValueChange={(value: "draft" | "published") => setForm({ ...form, status: value })}
+                  >
+                    <SelectTrigger id="status">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="published">Published</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="pt-4 border-t border-slate-100">
+                  <Button type="submit" disabled={uploading} className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700">
+                    {uploading ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4 mr-2" />
+                    )}
+                    {uploading
+                      ? "Saving Album..."
+                      : editingId
+                      ? "Update Album"
+                      : "Create Album"}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </section>
+
+        <section className="lg:col-span-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-display font-bold text-slate-900">Gallery Albums</h2>
+            <Badge variant="secondary" className="bg-orange-100 text-orange-700">{galleryEvents.length} Total</Badge>
+          </div>
+
+          <div className="space-y-4">
+            {galleryEvents.map((item) => (
+              <Card key={item.id} className={`overflow-hidden border-slate-200/60 shadow-sm transition-all group ${selectedGalleryId === item.id ? 'ring-2 ring-orange-500 shadow-md' : 'hover:shadow-md'}`}>
+                <div className="flex flex-col sm:flex-row h-full">
+                  {item.cover_image_url && (
+                    <div className="w-full sm:w-48 h-40 sm:h-auto shrink-0 bg-slate-100">
+                      <img
+                        src={item.cover_image_url}
+                        alt={item.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+                  )}
+                  <CardContent className="p-4 flex-1 flex flex-col justify-between">
+                    <div>
+                      <div className="flex justify-between items-start gap-4 mb-2">
+                        <h3 className="font-semibold text-slate-900 line-clamp-2">{item.title}</h3>
+                        <Badge variant={item.status === "published" ? "default" : "secondary"} className="shrink-0">
+                          {item.status}
+                        </Badge>
+                      </div>
+                      <div className="space-y-1 mb-4">
+                        <div className="flex items-center text-sm text-slate-500">
+                          <Calendar className="h-3.5 w-3.5 mr-2" />
+                          {item.event_date || "No date"}
+                        </div>
+                        {item.location && (
+                          <div className="flex items-center text-sm text-slate-500">
+                            <MapPin className="h-3.5 w-3.5 mr-2" />
+                            {item.location}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      <Button size="sm" onClick={() => selectGallery(item)} className="bg-slate-900 hover:bg-slate-800">
+                        <Eye className="h-3.5 w-3.5 mr-2" />
+                        View Images
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => editGalleryEvent(item)}>
+                        <Edit className="h-3.5 w-3.5 mr-2" />
+                        Edit
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => deleteGalleryEvent(item.id!)}>
+                        <Trash2 className="h-3.5 w-3.5 mr-2" />
+                        Delete
+                      </Button>
+                    </div>
+                  </CardContent>
+                </div>
+              </Card>
             ))}
+            {galleryEvents.length === 0 && (
+              <div className="text-center py-12 bg-white rounded-xl border border-dashed border-slate-300">
+                <ImageIcon className="h-8 w-8 mx-auto text-slate-300 mb-3" />
+                <p className="text-sm text-slate-500">No albums found.</p>
+              </div>
+            )}
           </div>
         </section>
       </div>
 
       {selectedGalleryId && (
-        <section className="bg-white border rounded-xl p-6">
-          <h2 className="text-xl font-bold mb-1">Gallery Images</h2>
-          <p className="text-sm text-slate-500 mb-4">
-            Album: {selectedGalleryTitle}
-          </p>
-
-          <div className="grid md:grid-cols-4 gap-4">
-            {galleryImages.map((image) => (
-              <div key={image.id} className="border rounded-xl p-3">
-                <img
-                  src={image.image_url}
-                  alt={image.caption || "Gallery image"}
-                  className="h-32 w-full object-cover rounded-lg"
-                />
-
-                {image.caption && (
-                  <p className="text-sm mt-2 text-slate-600">{image.caption}</p>
-                )}
-
-                <button
-                  onClick={() => deleteGalleryImage(image.id!)}
-                  className="mt-3 px-3 py-2 bg-red-600 text-white rounded w-full"
-                >
-                  Delete
-                </button>
-              </div>
-            ))}
+        <section className="bg-white border rounded-xl p-6 shadow-sm animate-in zoom-in-95 duration-300">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <ImageIcon className="h-6 w-6 text-orange-600" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-display font-bold text-slate-900">Images</h2>
+              <p className="text-sm text-slate-500 font-medium">Album: {selectedGalleryTitle}</p>
+            </div>
+            <Badge variant="secondary" className="ml-auto">
+              {galleryImages.length} Images
+            </Badge>
           </div>
+
+          {galleryImages.length === 0 ? (
+            <div className="text-center py-12 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+              <p className="text-sm text-slate-500">No images in this album yet.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {galleryImages.map((image) => (
+                <div key={image.id} className="group relative rounded-xl overflow-hidden bg-slate-100 aspect-square shadow-sm border border-slate-200">
+                  <img
+                    src={image.image_url}
+                    alt={image.caption || "Gallery image"}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                  
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
+                    {image.caption && (
+                      <p className="text-xs text-white line-clamp-2 mb-2">{image.caption}</p>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="w-full h-8"
+                      onClick={() => deleteGalleryImage(image.id!)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5 mr-2" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       )}
     </div>

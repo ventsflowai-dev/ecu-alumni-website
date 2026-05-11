@@ -21,33 +21,60 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Listener FIRST
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
+    let mounted = true;
+
+    // Check session on mount
+    supabase.auth.getSession().then(({ data: { session: sess } }) => {
+      if (!mounted) return;
       setSession(sess);
       setUser(sess?.user ?? null);
+      
       if (sess?.user) {
-        // Defer role lookup
-        setTimeout(async () => {
+        (async () => {
           const { data } = await supabase
             .from("user_roles")
             .select("role")
             .eq("user_id", sess.user.id)
             .eq("role", "admin")
             .maybeSingle();
-          setIsAdmin(!!data);
-        }, 0);
+          
+          if (mounted) {
+            setIsAdmin(!!data);
+            setLoading(false);
+          }
+        })();
+      } else {
+        setIsAdmin(false);
+        setLoading(false);
+      }
+    });
+
+    // Listen for auth changes
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
+      if (!mounted) return;
+      setSession(sess);
+      setUser(sess?.user ?? null);
+      
+      if (sess?.user) {
+        (async () => {
+          const { data } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", sess.user.id)
+            .eq("role", "admin")
+            .maybeSingle();
+            
+          if (mounted) setIsAdmin(!!data);
+        })();
       } else {
         setIsAdmin(false);
       }
     });
 
-    supabase.auth.getSession().then(({ data: { session: sess } }) => {
-      setSession(sess);
-      setUser(sess?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {

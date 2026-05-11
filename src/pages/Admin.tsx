@@ -1,5 +1,7 @@
 import { Layout } from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import { Users, FileText, Calendar, Image, Heart, Megaphone, Mail } from "lucide-react";
 import { MembersPanel } from "@/components/admin/MembersPanel";
 import { BlogPanel } from "@/components/admin/BlogPanel";
@@ -15,6 +17,13 @@ const Admin = () => (
       <div className="mb-8">
         <h1 className="font-display text-3xl md:text-4xl font-bold">Admin Dashboard</h1>
         <p className="text-muted-foreground mt-1">Manage members, content, and communications.</p>
+        <div className="mt-4">
+          <Link to="/cms">
+            <Button className="bg-blue-950 text-white hover:bg-blue-900">
+              Open Full Content Management System (CMS)
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <Tabs defaultValue="members">

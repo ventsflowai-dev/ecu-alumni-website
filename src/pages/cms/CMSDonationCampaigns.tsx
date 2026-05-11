@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Upload, Save, X, Edit, Trash2, Heart, DollarSign, Target, Loader2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 type Campaign = {
   id?: string;
@@ -126,158 +135,230 @@ export default function CMSDonationCampaigns() {
     setEditingId(campaign.id || null);
   }
 
+  function cancelEdit() {
+    setForm(emptyForm);
+    setEditingId(null);
+  }
+
   return (
-    <div className="grid lg:grid-cols-2 gap-8">
-      <section className="bg-white border rounded-xl p-6">
-        <h1 className="text-xl font-bold mb-4">
-          {editingId ? "Edit Campaign" : "Create Campaign"}
-        </h1>
+    <div className="grid lg:grid-cols-12 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <section className="lg:col-span-7">
+        <Card className="border-slate-200/60 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-xl font-display">
+              {editingId ? "Edit Campaign" : "Create Campaign"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={saveCampaign} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="title">Campaign Title</Label>
+                <Input
+                  id="title"
+                  placeholder="Enter campaign title"
+                  value={form.title}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      title: e.target.value,
+                      slug: generateSlug(e.target.value),
+                    })
+                  }
+                  required
+                />
+              </div>
 
-        <form onSubmit={saveCampaign} className="space-y-4">
-          <input
-            className="w-full border rounded-lg p-3"
-            placeholder="Campaign Title"
-            value={form.title}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                title: e.target.value,
-                slug: generateSlug(e.target.value),
-              })
-            }
-          />
+              <div className="space-y-2">
+                <Label htmlFor="slug">Slug</Label>
+                <Input
+                  id="slug"
+                  placeholder="campaign-url-slug"
+                  value={form.slug}
+                  onChange={(e) => setForm({ ...form, slug: e.target.value })}
+                />
+              </div>
 
-          <input
-            className="w-full border rounded-lg p-3"
-            placeholder="Slug"
-            value={form.slug}
-            onChange={(e) => setForm({ ...form, slug: e.target.value })}
-          />
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Tell people why they should donate..."
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  className="min-h-[150px]"
+                />
+              </div>
 
-          <textarea
-            className="w-full border rounded-lg p-3 min-h-32"
-            placeholder="Description"
-            value={form.description}
-            onChange={(e) =>
-              setForm({ ...form, description: e.target.value })
-            }
-          />
+              <div className="space-y-2">
+                <Label>Campaign Image</Label>
+                <div className="flex items-center gap-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('featured_image')?.click()}
+                    disabled={uploading}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {uploading ? "Uploading..." : "Upload Image"}
+                  </Button>
+                  <input
+                    id="featured_image"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) uploadCampaignImage(file);
+                    }}
+                  />
+                </div>
+                {form.featured_image_url && (
+                  <div className="mt-4 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 relative aspect-video">
+                    <img
+                      src={form.featured_image_url}
+                      alt="Campaign preview"
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Campaign Image
-            </label>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="target_amount">Target Amount (₦)</Label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-slate-500 sm:text-sm">₦</span>
+                    </div>
+                    <Input
+                      id="target_amount"
+                      type="number"
+                      className="pl-7"
+                      placeholder="e.g. 1000000"
+                      value={form.target_amount ?? ""}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          target_amount: e.target.value ? Number(e.target.value) : null,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="suggested_amounts">Suggested Amounts (Comma separated)</Label>
+                  <Input
+                    id="suggested_amounts"
+                    placeholder="e.g. 5000,10000,20000"
+                    value={form.suggested_amounts}
+                    onChange={(e) => setForm({ ...form, suggested_amounts: e.target.value })}
+                  />
+                </div>
+              </div>
 
-            <input
-              type="file"
-              accept="image/*"
-              className="w-full border rounded-lg p-3"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) uploadCampaignImage(file);
-              }}
-            />
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select
+                  value={form.status}
+                  onValueChange={(value: "active" | "inactive") => setForm({ ...form, status: value })}
+                >
+                  <SelectTrigger id="status">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {uploading && (
-              <p className="text-sm text-slate-500 mt-2">Uploading image...</p>
-            )}
+              <div className="flex gap-3 pt-4 border-t border-slate-100">
+                <Button type="submit" disabled={uploading} className="bg-teal-600 hover:bg-teal-700">
+                  <Save className="h-4 w-4 mr-2" />
+                  {editingId ? "Update Campaign" : "Create Campaign"}
+                </Button>
 
-            {form.featured_image_url && (
-              <img
-                src={form.featured_image_url}
-                alt="Campaign preview"
-                className="mt-3 h-40 w-full object-cover rounded-lg border"
-              />
-            )}
-          </div>
-
-          <input
-            type="number"
-            className="w-full border rounded-lg p-3"
-            placeholder="Target Amount"
-            value={form.target_amount ?? ""}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                target_amount: e.target.value ? Number(e.target.value) : null,
-              })
-            }
-          />
-
-          <input
-            className="w-full border rounded-lg p-3"
-            placeholder="Suggested Amounts e.g. 5000,10000,20000"
-            value={form.suggested_amounts}
-            onChange={(e) =>
-              setForm({ ...form, suggested_amounts: e.target.value })
-            }
-          />
-
-          <select
-            className="w-full border rounded-lg p-3"
-            value={form.status}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                status: e.target.value as "active" | "inactive",
-              })
-            }
-          >
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-
-          <button
-            disabled={uploading}
-            className="bg-blue-950 text-white px-5 py-3 rounded-lg disabled:opacity-50"
-          >
-            {editingId ? "Update Campaign" : "Create Campaign"}
-          </button>
-        </form>
+                {editingId && (
+                  <Button type="button" variant="outline" onClick={cancelEdit}>
+                    <X className="h-4 w-4 mr-2" />
+                    Cancel
+                  </Button>
+                )}
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </section>
 
-      <section>
-        <h2 className="text-xl font-bold mb-4">Donation Campaigns</h2>
+      <section className="lg:col-span-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-display font-bold text-slate-900">Donation Campaigns</h2>
+          <Badge variant="secondary" className="bg-teal-100 text-teal-700">{campaigns.length} Total</Badge>
+        </div>
 
-        <div className="space-y-3">
-          {campaigns.map((campaign: any) => (
-            <div key={campaign.id} className="bg-white border rounded-xl p-4">
-              {campaign.featured_image_url && (
-                <img
-                  src={campaign.featured_image_url}
-                  alt={campaign.title}
-                  className="h-32 w-full object-cover rounded-lg mb-3"
-                />
-              )}
+        <div className="space-y-4">
+          {campaigns.map((campaign: any) => {
+            const raised = Number(campaign.amount_raised || 0);
+            const target = Number(campaign.target_amount || 0);
+            const progress = target > 0 ? Math.min((raised / target) * 100, 100) : 0;
 
-              <h3 className="font-semibold">{campaign.title}</h3>
+            return (
+              <Card key={campaign.id} className="overflow-hidden border-slate-200/60 shadow-sm hover:shadow-md transition-all group">
+                {campaign.featured_image_url && (
+                  <div className="h-32 w-full overflow-hidden bg-slate-100">
+                    <img
+                      src={campaign.featured_image_url}
+                      alt={campaign.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
+                )}
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-start gap-4 mb-2">
+                    <h3 className="font-semibold text-slate-900 line-clamp-2">{campaign.title}</h3>
+                    <Badge variant={campaign.status === "active" ? "default" : "secondary"} className="shrink-0">
+                      {campaign.status}
+                    </Badge>
+                  </div>
 
-              <p className="text-sm text-slate-500">
-                ₦{Number(campaign.amount_raised || 0).toLocaleString()} raised
-                {campaign.target_amount
-                  ? ` of ₦${Number(campaign.target_amount).toLocaleString()}`
-                  : ""}
-              </p>
+                  <div className="space-y-3 mt-4 mb-4">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-teal-600 font-semibold flex items-center">
+                        <DollarSign className="h-3.5 w-3.5 mr-0.5" />
+                        ₦{raised.toLocaleString()} raised
+                      </span>
+                      {target > 0 && (
+                        <span className="text-slate-500 flex items-center">
+                          <Target className="h-3.5 w-3.5 mr-1" />
+                          Target: ₦{target.toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                    {target > 0 && (
+                      <Progress value={progress} className="h-2" />
+                    )}
+                  </div>
 
-              <p className="text-sm text-slate-500">{campaign.status}</p>
-
-              <div className="flex gap-2 mt-3">
-                <button
-                  onClick={() => editCampaign(campaign)}
-                  className="px-3 py-2 bg-slate-100 rounded"
-                >
-                  Edit
-                </button>
-
-                <button
-                  onClick={() => deleteCampaign(campaign.id)}
-                  className="px-3 py-2 bg-red-600 text-white rounded"
-                >
-                  Delete
-                </button>
-              </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" className="w-full" onClick={() => editCampaign(campaign)}>
+                      <Edit className="h-3.5 w-3.5 mr-2" />
+                      Edit
+                    </Button>
+                    <Button size="sm" variant="destructive" className="w-full" onClick={() => deleteCampaign(campaign.id)}>
+                      <Trash2 className="h-3.5 w-3.5 mr-2" />
+                      Delete
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+          {campaigns.length === 0 && (
+            <div className="text-center py-12 bg-white rounded-xl border border-dashed border-slate-300">
+              <Heart className="h-8 w-8 mx-auto text-slate-300 mb-3" />
+              <p className="text-sm text-slate-500">No donation campaigns found.</p>
             </div>
-          ))}
+          )}
         </div>
       </section>
     </div>

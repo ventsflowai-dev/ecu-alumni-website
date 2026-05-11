@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
 import { PartnerCTA } from "@/components/PartnerCTA";
+import { FadeIn, StaggerContainer, StaggerItem } from "@/components/FadeIn";
 
 const schema = z.object({
   full_name: z.string().trim().min(1).max(200),
@@ -50,9 +51,15 @@ const Contact = () => {
       <section className="bg-gradient-hero text-primary-foreground">
         <div className="container py-20 md:py-28">
           <div className="max-w-3xl">
-            <div className="text-xs uppercase tracking-[0.25em] text-accent-soft mb-4">Contact Us</div>
-            <h1 className="font-display text-4xl md:text-6xl font-bold mb-4 text-balance">We Would Love to Hear from You</h1>
-            <p className="text-lg text-primary-foreground/85">Please write or call us with your questions or comments.</p>
+            <FadeIn direction="up" delay={0.1}>
+              <div className="text-xs uppercase tracking-[0.25em] text-accent-soft mb-4">Contact Us</div>
+            </FadeIn>
+            <FadeIn direction="up" delay={0.2}>
+              <h1 className="font-display text-4xl md:text-6xl font-bold mb-4 text-balance">We Would Love to Hear from You</h1>
+            </FadeIn>
+            <FadeIn direction="up" delay={0.3}>
+              <p className="text-lg text-primary-foreground/85">Please write or call us with your questions or comments.</p>
+            </FadeIn>
           </div>
         </div>
       </section>
@@ -60,62 +67,76 @@ const Contact = () => {
       <section className="container py-20 grid lg:grid-cols-5 gap-10">
         <div className="lg:col-span-2 space-y-8">
           <div>
-            <h3 className="font-display text-2xl font-bold mb-5">Reach us</h3>
-            <ul className="space-y-5">
-              <li className="flex gap-4">
-                <div className="h-11 w-11 rounded-full bg-accent/10 text-accent flex items-center justify-center shrink-0"><MapPin className="h-5 w-5" /></div>
-                <div><div className="font-semibold">Address</div><div className="text-sm text-muted-foreground">ECU Empowerment Center, Obafemi Awolowo University, Ile-Ife, Osun State.</div></div>
-              </li>
-              <li className="flex gap-4">
-                <div className="h-11 w-11 rounded-full bg-accent/10 text-accent flex items-center justify-center shrink-0"><Phone className="h-5 w-5" /></div>
-                <div><div className="font-semibold">Phone</div><a href="tel:+2348133836864" className="text-sm text-muted-foreground hover:text-primary">+234 813 383 6864</a></div>
-              </li>
-              <li className="flex gap-4">
-                <div className="h-11 w-11 rounded-full bg-accent/10 text-accent flex items-center justify-center shrink-0"><Mail className="h-5 w-5" /></div>
-                <div><div className="font-semibold">Email</div><a href="mailto:ecuifealunmi@gmail.com" className="text-sm text-muted-foreground hover:text-primary break-all">ecuifealunmi@gmail.com</a></div>
-              </li>
-            </ul>
+            <FadeIn direction="up">
+              <h3 className="font-display text-2xl font-bold mb-5">Reach us</h3>
+            </FadeIn>
+            <StaggerContainer className="space-y-5">
+              <StaggerItem>
+                <li className="flex gap-4">
+                  <div className="h-11 w-11 rounded-full bg-accent/10 text-accent flex items-center justify-center shrink-0"><MapPin className="h-5 w-5" /></div>
+                  <div><div className="font-semibold">Address</div><div className="text-sm text-muted-foreground">ECU Empowerment Center, Obafemi Awolowo University, Ile-Ife, Osun State.</div></div>
+                </li>
+              </StaggerItem>
+              <StaggerItem>
+                <li className="flex gap-4">
+                  <div className="h-11 w-11 rounded-full bg-accent/10 text-accent flex items-center justify-center shrink-0"><Phone className="h-5 w-5" /></div>
+                  <div><div className="font-semibold">Phone</div><a href="tel:+2348133836864" className="text-sm text-muted-foreground hover:text-primary">+234 813 383 6864</a></div>
+                </li>
+              </StaggerItem>
+              <StaggerItem>
+                <li className="flex gap-4">
+                  <div className="h-11 w-11 rounded-full bg-accent/10 text-accent flex items-center justify-center shrink-0"><Mail className="h-5 w-5" /></div>
+                  <div><div className="font-semibold">Email</div><a href="mailto:ecuifealunmi@gmail.com" className="text-sm text-muted-foreground hover:text-primary break-all">ecuifealunmi@gmail.com</a></div>
+                </li>
+              </StaggerItem>
+            </StaggerContainer>
           </div>
           <div>
-            <h4 className="font-display text-lg font-semibold mb-4">Keep In Touch</h4>
-            <div className="flex gap-3">
-              <a href="https://instagram.com" target="_blank" rel="noreferrer" className="p-3 rounded-full bg-secondary hover:bg-accent hover:text-accent-foreground transition-smooth"><Instagram className="h-5 w-5" /></a>
-              <a href="https://facebook.com" target="_blank" rel="noreferrer" className="p-3 rounded-full bg-secondary hover:bg-accent hover:text-accent-foreground transition-smooth"><Facebook className="h-5 w-5" /></a>
-              <a href="https://twitter.com" target="_blank" rel="noreferrer" className="p-3 rounded-full bg-secondary hover:bg-accent hover:text-accent-foreground transition-smooth"><Twitter className="h-5 w-5" /></a>
-            </div>
+            <FadeIn direction="up" delay={0.2}>
+              <h4 className="font-display text-lg font-semibold mb-4">Keep In Touch</h4>
+              <div className="flex gap-3">
+                <a href="https://instagram.com" target="_blank" rel="noreferrer" className="p-3 rounded-full bg-secondary hover:bg-accent hover:text-accent-foreground transition-smooth"><Instagram className="h-5 w-5" /></a>
+                <a href="https://facebook.com" target="_blank" rel="noreferrer" className="p-3 rounded-full bg-secondary hover:bg-accent hover:text-accent-foreground transition-smooth"><Facebook className="h-5 w-5" /></a>
+                <a href="https://twitter.com" target="_blank" rel="noreferrer" className="p-3 rounded-full bg-secondary hover:bg-accent hover:text-accent-foreground transition-smooth"><Twitter className="h-5 w-5" /></a>
+              </div>
+            </FadeIn>
           </div>
         </div>
 
-        <Card className="lg:col-span-3 p-8">
-          <h3 className="font-display text-2xl font-bold mb-6">Send us a message</h3>
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="full_name">Name *</Label>
-                <Input id="full_name" required maxLength={200} value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
+        <FadeIn direction="left" className="lg:col-span-3">
+          <Card className="p-8">
+            <h3 className="font-display text-2xl font-bold mb-6">Send us a message</h3>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="full_name">Name *</Label>
+                  <Input id="full_name" required maxLength={200} value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email *</Label>
+                  <Input id="email" type="email" required maxLength={320} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                </div>
               </div>
               <div>
-                <Label htmlFor="email">Email *</Label>
-                <Input id="email" type="email" required maxLength={320} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                <Label htmlFor="subject">Subject</Label>
+                <Input id="subject" maxLength={200} value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} />
               </div>
-            </div>
-            <div>
-              <Label htmlFor="subject">Subject</Label>
-              <Input id="subject" maxLength={200} value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} />
-            </div>
-            <div>
-              <Label htmlFor="message">Message *</Label>
-              <Textarea id="message" required rows={6} maxLength={5000} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} />
-            </div>
-            <Button type="submit" disabled={loading} className="bg-accent hover:bg-accent/90 text-accent-foreground" size="lg">
-              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Send Message
-            </Button>
-          </form>
-        </Card>
+              <div>
+                <Label htmlFor="message">Message *</Label>
+                <Textarea id="message" required rows={6} maxLength={5000} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} />
+              </div>
+              <Button type="submit" disabled={loading} className="bg-accent hover:bg-accent/90 text-accent-foreground" size="lg">
+                {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Send Message
+              </Button>
+            </form>
+          </Card>
+        </FadeIn>
       </section>
 
-      <PartnerCTA />
+      <FadeIn direction="up">
+        <PartnerCTA />
+      </FadeIn>
     </Layout>
   );
 };

@@ -31,7 +31,8 @@ const Dashboard = () => {
       setProfile(data ?? { user_id: user.id, full_name: "", email: user.email ?? "", status: "pending", directory_consent: false, show_email_publicly: false, show_phone_publicly: false });
     });
     // Load donations + resolve campaign titles separately (no FK declared)
-    supabase.from("donations").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).then(async ({ data }) => {
+    const emailFilter = user.email ? `,donor_email.eq.${user.email}` : "";
+    supabase.from("donations").select("*").or(`user_id.eq.${user.id}${emailFilter}`).order("created_at", { ascending: false }).then(async ({ data }) => {
       const list = data ?? [];
       const ids = Array.from(new Set(list.map((d: any) => d.campaign_id).filter(Boolean)));
       let titleMap: Record<string, string> = {};
