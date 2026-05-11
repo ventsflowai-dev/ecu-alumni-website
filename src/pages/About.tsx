@@ -4,7 +4,7 @@ import { PartnerCTA } from "@/components/PartnerCTA";
 import { Card } from "@/components/ui/card";
 import { Check } from "lucide-react";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/FadeIn";
-import about from "@/assets/about-fellowship.jpg";
+import about from "/assets/about.jpg";
 
 const beliefs = [
   "The Authority of Scriptures",

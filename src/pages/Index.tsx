@@ -8,8 +8,11 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { PartnerCTA } from "@/components/PartnerCTA";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/FadeIn";
 import { supabase } from "@/integrations/supabase/client";
-import hero from "@/assets/hero-fellowship.jpg";
-import about from "@/assets/about-fellowship.jpg";
+import hero1 from "/assets/hero1.jpg";
+import hero2 from "/assets/hero2.jpg";
+import hero3 from "/assets/hero3.jpg";
+import hero4 from "/assets/hero4.jpg";
+import about from "/assets/about.jpg";
 
 const whatWeDo = [
   { n: "01", icon: BookOpen, title: "We Nurture Spiritual Growth", text: "We care intentionally for the spiritual needs of the ECU Alumni Global Fellowship through prayer platforms, biblical teaching, fellowship gatherings, and accountability structures that help members remain grounded in the Word and steadfast in faith." },
@@ -24,19 +27,35 @@ const Index = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
   const [galleries, setGalleries] = useState<any[]>([]);
+  const [currentHeroIdx, setCurrentHeroIdx] = useState(0);
+  const heroImages = [hero1, hero2, hero3, hero4];
 
   useEffect(() => {
     supabase.from("blog_posts").select("*").eq("status", "published").order("created_at", { ascending: false }).limit(3).then(({ data }) => setPosts(data ?? []));
     supabase.from("events").select("*").eq("status", "published").eq("event_status", "upcoming").order("event_date", { ascending: true }).limit(3).then(({ data }) => setEvents(data ?? []));
     supabase.from("gallery_events").select("*").eq("status", "published").order("event_date", { ascending: false }).limit(6).then(({ data }) => setGalleries(data ?? []));
+
+    const timer = setInterval(() => {
+      setCurrentHeroIdx((prev) => (prev + 1) % heroImages.length);
+    }, 5000);
+    return () => clearInterval(timer);
   }, []);
 
   return (
     <Layout>
       {/* HERO */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0">
-          <img src={hero} alt="ECU fellowship in worship" className="h-full w-full object-cover" width={1920} height={1080} />
+        <div className="absolute inset-0 bg-black">
+          {heroImages.map((img, idx) => (
+            <img
+              key={idx}
+              src={img}
+              alt="ECU fellowship in worship"
+              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${
+                idx === currentHeroIdx ? "opacity-100" : "opacity-0"
+              }`}
+            />
+          ))}
           <div className="absolute inset-0 bg-gradient-to-r from-primary-deep/95 via-primary/85 to-primary/60" />
         </div>
         <div className="relative container py-24 md:py-36 lg:py-44">

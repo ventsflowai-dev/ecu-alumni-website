@@ -13,6 +13,9 @@ import { Loader2, Upload, User, Heart, Megaphone, Calendar } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { Download } from "lucide-react";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -67,6 +70,89 @@ const Dashboard = () => {
     updateField("profile_photo_url", data.publicUrl);
     await supabase.from("profiles").update({ profile_photo_url: data.publicUrl }).eq("user_id", user.id);
     toast.success("Photo uploaded");
+  };
+
+  const addLogo = async (doc: jsPDF, x: number, y: number, w: number, h: number) => {
+    return new Promise<void>((resolve, reject) => {
+      const img = new Image();
+      // Use absolute path for logo since we know it's in public folder as well
+      img.src = "/logo.png";
+      img.onload = () => {
+        doc.addImage(img, "PNG", x, y, w, h);
+        resolve();
+      };
+      img.onerror = reject;
+    });
+  };
+
+  const downloadSingleReceipt = async (donation: any) => {
+    const doc = new jsPDF();
+    
+    try {
+      await addLogo(doc, 95, 10, 20, 20);
+    } catch (e) {
+      console.error("Failed to load logo for PDF");
+    }
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.text("Evangelical Christian Union Alumni Fellowship", 105, 40, { align: "center" });
+    
+    doc.setFontSize(14);
+    doc.text("Donation Receipt", 105, 50, { align: "center" });
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    doc.text(`Date: ${new Date(donation.created_at).toLocaleDateString()}`, 20, 70);
+    doc.text(`Donor Name: ${donation.donor_name || profile?.full_name || "N/A"}`, 20, 80);
+    doc.text(`Email: ${donation.donor_email || profile?.email || "N/A"}`, 20, 90);
+    doc.text(`Campaign: ${donation.donation_campaigns?.title || "General Donation"}`, 20, 100);
+    doc.text(`Amount: ${donation.currency} ${Number(donation.amount).toLocaleString()}`, 20, 110);
+    doc.text(`Reference: ${donation.payment_reference || "N/A"}`, 20, 120);
+    doc.text(`Status: ${donation.payment_status}`, 20, 130);
+    
+    doc.text("Thank you for your generous donation!", 105, 160, { align: "center" });
+    
+    doc.save(`Receipt_${donation.payment_reference || donation.id}.pdf`);
+  };
+
+  const downloadAllReceipts = async () => {
+    const doc = new jsPDF();
+    
+    try {
+      await addLogo(doc, 95, 10, 20, 20);
+    } catch (e) {
+      console.error("Failed to load logo for PDF");
+    }
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("ECU Alumni Fellowship - All Donations", 105, 40, { align: "center" });
+    
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Donor: ${profile?.full_name || user?.email}`, 14, 50);
+    doc.text(`Date Generated: ${new Date().toLocaleDateString()}`, 14, 60);
+
+    const successfulDonations = donations.filter((d) => d.payment_status === "successful");
+    
+    const tableData = successfulDonations.map((d) => [
+      new Date(d.created_at).toLocaleDateString(),
+      d.donation_campaigns?.title || "General",
+      `${d.currency} ${Number(d.amount).toLocaleString()}`,
+      d.payment_reference || "—",
+    ]);
+
+    const total = successfulDonations.reduce((sum, d) => sum + Number(d.amount), 0);
+
+    autoTable(doc, {
+      startY: 70,
+      head: [["Date", "Campaign", "Amount", "Reference"]],
+      body: tableData,
+      foot: [["", "Total", `NGN ${total.toLocaleString()}`, ""]],
+    });
+
+    doc.save("All_Donations_Receipt.pdf");
   };
 
   if (!profile) return <Layout><div className="container py-32 grid place-items-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div></Layout>;
@@ -147,14 +233,21 @@ const Dashboard = () => {
 
           <TabsContent value="donations">
             <Card className="p-6">
-              <h2 className="font-display text-2xl font-bold mb-4">My Donation History</h2>
+              <div className="flex flex-wrap items-center justify-between mb-4 gap-4">
+                <h2 className="font-display text-2xl font-bold">My Donation History</h2>
+                {donations.filter(d => d.payment_status === "successful").length > 0 && (
+                  <Button onClick={downloadAllReceipts} variant="outline" size="sm">
+                    <Download className="h-4 w-4 mr-2" /> Download Summary
+                  </Button>
+                )}
+              </div>
               {donations.length === 0 ? (
                 <p className="text-muted-foreground">You have not made any donations yet.</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="text-left text-muted-foreground border-b">
-                      <tr><th className="py-2">Date</th><th>Campaign</th><th>Amount</th><th>Reference</th><th>Status</th></tr>
+                      <tr><th className="py-2">Date</th><th>Campaign</th><th>Amount</th><th>Reference</th><th>Status</th><th></th></tr>
                     </thead>
                     <tbody>
                       {donations.map((d) => (
@@ -164,6 +257,13 @@ const Dashboard = () => {
                           <td className="font-semibold">{d.currency} {Number(d.amount).toLocaleString()}</td>
                           <td className="font-mono text-xs">{d.payment_reference ?? "—"}</td>
                           <td><Badge variant={d.payment_status === "successful" ? "default" : "secondary"}>{d.payment_status}</Badge></td>
+                          <td className="text-right">
+                            {d.payment_status === "successful" && (
+                              <Button onClick={() => downloadSingleReceipt(d)} variant="ghost" size="icon" title="Download Receipt">
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
