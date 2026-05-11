@@ -14,7 +14,6 @@ const links = [
   { to: "/blog", label: "Blog" },
   { to: "/donate", label: "Donate" },
   { to: "/contact", label: "Contact" },
-  { to: "/cms", label: "CMS" },
 ];
 
 export const Header = () => {
