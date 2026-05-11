@@ -28,7 +28,7 @@ const Index = () => {
   const [events, setEvents] = useState<any[]>([]);
   const [galleries, setGalleries] = useState<any[]>([]);
   const [currentHeroIdx, setCurrentHeroIdx] = useState(0);
-  const heroImages = [hero1, hero2, hero3, hero4];
+  const heroImages = [hero2, hero1, hero3, hero4];
 
   useEffect(() => {
     supabase.from("blog_posts").select("*").eq("status", "published").order("created_at", { ascending: false }).limit(3).then(({ data }) => setPosts(data ?? []));
@@ -51,9 +51,8 @@ const Index = () => {
               key={idx}
               src={img}
               alt="ECU fellowship in worship"
-              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${
-                idx === currentHeroIdx ? "opacity-100" : "opacity-0"
-              }`}
+              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${idx === currentHeroIdx ? "opacity-100" : "opacity-0"
+                }`}
             />
           ))}
           <div className="absolute inset-0 bg-gradient-to-r from-primary-deep/95 via-primary/85 to-primary/60" />
@@ -188,7 +187,7 @@ const Index = () => {
             ))}
           </StaggerContainer>
         </FadeIn>
-        
+
         <FadeIn direction="up" delay={0.3}>
           <SectionHeader eyebrow="Calendar" title="Upcoming Events" />
           <StaggerContainer className="mt-8 space-y-5">
