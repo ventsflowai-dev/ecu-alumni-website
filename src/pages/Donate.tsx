@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Layout } from "@/components/Layout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,221 +6,320 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Heart, Loader2 } from "lucide-react";
+import { Heart, Loader2, Sparkles, CreditCard, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/FadeIn";
-import { useFlutterwave, closePaymentModal } from "flutterwave-react-v3";
+import { useAuth } from "@/hooks/useAuth";
 import { usePaystackPayment } from "react-paystack";
 import { toast } from "sonner";
+import hero3 from "/assets/hero3.jpg";
 
 const Donate = () => {
+  const { user } = useAuth();
+
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [amount, setAmount] = useState<string>("");
+  const [selectedCampaign, setSelectedCampaign] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Form states
+  const [donorName, setDonorName] = useState("");
+  const [donorEmail, setDonorEmail] = useState("");
+  const [donorPhone, setDonorPhone] = useState("");
+  const [amount, setAmount] = useState("");
+  const [message, setMessage] = useState("");
+  const [processing, setProcessing] = useState(false);
+
+  // Reference to store active donation ID safely for Paystack closure/success callback
+  const donationIdRef = useRef<string | null>(null);
+
+  // Fetch active campaigns on load
   useEffect(() => {
-    supabase.from("donation_campaigns").select("*").eq("status", "active").order("created_at", { ascending: false }).then(({ data }) => {
-      setCampaigns(data ?? []); setLoading(false);
-    });
+    supabase
+      .from("donation_campaigns")
+      .select("*")
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        setCampaigns(data ?? []);
+        setLoading(false);
+      });
   }, []);
 
-  const fmt = (n: number) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(n);
+  // Auto-fill profile details if user is logged in
+  useEffect(() => {
+    if (!user) return;
 
-  const config = {
-    public_key: import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY || "",
-    tx_ref: `tx-${Date.now()}`,
-    amount: Number(amount) || 0,
-    currency: "NGN",
-    payment_options: "card,mobilemoney,ussd",
-    customer: {
-      email,
-      name,
-      phone_number: "",
-    },
-    customizations: {
-      title: "ECU Alumni Fellowship",
-      description: `Donation for ${selectedCampaign?.title || "Campaign"}`,
-      logo: "https://hng.tech/img/brand/logo.png", // A placeholder, ideally replace with ECU logo url
-    },
-  };
+    supabase
+      .from("profiles")
+      .select("full_name,email,phone")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setDonorName(data.full_name ?? "");
+          setDonorEmail(data.email ?? user.email ?? "");
+          setDonorPhone(data.phone ?? "");
+        } else {
+          setDonorEmail(user.email ?? "");
+        }
+      });
+  }, [user]);
 
-  const handleFlutterPayment = useFlutterwave(config);
+  // Formatter for Currency
+  const fmt = (n: number) =>
+    new Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: "NGN",
+      maximumFractionDigits: 0,
+    }).format(n);
 
-  const handleDonateClick = (campaign: any) => {
-    setSelectedCampaign(campaign);
-    setIsModalOpen(true);
-    setName("");
-    setEmail("");
-    setAmount("");
-  };
+  // Build unique secure transaction reference
+  const txRef = `ECU-PAY-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
+  // Paystack React Hook Configuration
   const paystackConfig = {
-    reference: `tx-${Date.now()}`,
-    email: email,
-    amount: (Number(amount) || 0) * 100, // Paystack expects kobo
+    reference: txRef,
+    email: donorEmail || "anonymous@ecu-alumni.org",
+    amount: Math.round((Number(amount) || 0) * 100), // Paystack requires amount in kobo
     publicKey: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || "",
   };
 
   const initializePaystack = usePaystackPayment(paystackConfig);
 
+  // Secure Server-side verification handler
   const handlePaystackSuccess = async (reference: any) => {
-    const { error } = await supabase.from("donations").insert({
-      campaign_id: selectedCampaign?.id || null,
-      donor_name: name,
-      donor_email: email,
-      amount: Number(amount),
-      currency: "NGN",
-      payment_status: "successful",
-      payment_reference: reference.reference ? String(reference.reference) : `tx-${Date.now()}`,
-    });
-
-    if (error) {
-      console.error("Failed to log donation:", error);
-      toast.error("Payment successful but failed to log record.");
-    } else {
-      toast.success("Thank you for your generous donation via Paystack!");
-      if (selectedCampaign?.id) {
-        const newAmount = Number(selectedCampaign.amount_raised || 0) + Number(amount);
-        await supabase.from("donation_campaigns").update({ amount_raised: newAmount }).eq("id", selectedCampaign.id);
-        setCampaigns(prev => prev.map(c => c.id === selectedCampaign.id ? { ...c, amount_raised: newAmount } : c));
-      }
+    const donationId = donationIdRef.current;
+    if (!donationId) {
+      toast.error("Security/system error: reference link was broken.");
+      setProcessing(false);
+      return;
     }
-    setIsModalOpen(false);
+
+    const verificationToast = toast.loading("Verifying your payment securely with Paystack...");
+
+    try {
+      // Invoke the Deno Edge Function securely on the server
+      const { data, error } = await supabase.functions.invoke("verify-paystack-payment", {
+        body: {
+          reference: reference.reference,
+          donation_id: donationId,
+        },
+      });
+
+      toast.dismiss(verificationToast);
+
+      if (error || !data?.success) {
+        console.error("Verification error response:", error || data);
+        toast.error(error?.message || data?.error || "Could not securely verify transaction. Please contact support.");
+        return;
+      }
+
+      toast.success("Thank you! Your donation was successfully verified and recorded.");
+      
+      // Update campaigns listing to show updated raised amount immediately
+      const { data: refreshedCampaigns } = await supabase
+        .from("donation_campaigns")
+        .select("*")
+        .eq("status", "active")
+        .order("created_at", { ascending: false });
+      if (refreshedCampaigns) {
+        setCampaigns(refreshedCampaigns);
+      }
+
+      // Reset form states and close modal
+      setIsModalOpen(false);
+      setSelectedCampaign(null);
+      setAmount("");
+      setMessage("");
+    } catch (err: any) {
+      toast.dismiss(verificationToast);
+      console.error("Verification system exception:", err);
+      toast.error("A network error occurred during payment verification.");
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const handlePaystackClose = () => {
-    toast.error("Payment was not completed successfully.");
+    toast.error("Checkout closed. Payment was not completed.");
+    setProcessing(false);
   };
 
-  const handlePaystackSubmit = (e: React.MouseEvent) => {
+  // Triggers checkout flow securely
+  const handleCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !email || !amount || Number(amount) <= 0) {
-      toast.error("Please fill all details correctly.");
+
+    if (!selectedCampaign) return;
+
+    if (!donorName.trim() || !donorEmail.trim()) {
+      toast.error("Please fill in your name and email address.");
       return;
     }
+
+    const numericAmount = Number(amount);
+    if (isNaN(numericAmount) || numericAmount < 100) {
+      toast.error("Minimum donation amount is ₦100.");
+      return;
+    }
+
     if (!import.meta.env.VITE_PAYSTACK_PUBLIC_KEY) {
-      toast.error("Paystack integration is not fully set up (Missing API Key).");
+      toast.error("Paystack system public key is not configured. Please contact the administrator.");
       return;
     }
-    initializePaystack({ onSuccess: handlePaystackSuccess, onClose: handlePaystackClose });
+
+    setProcessing(true);
+
+    // 1. Insert an audit-ready PENDING transaction record to prevent spoofing
+    const { data: donation, error } = await supabase
+      .from("donations")
+      .insert({
+        user_id: user?.id ?? null,
+        campaign_id: selectedCampaign.id,
+        donor_name: donorName.trim(),
+        donor_email: donorEmail.trim(),
+        donor_phone: donorPhone.trim() || null,
+        amount: numericAmount,
+        currency: "NGN",
+        donor_message: message.trim() || null,
+        payment_reference: txRef,
+        payment_status: "pending",
+      })
+      .select()
+      .single();
+
+    if (error || !donation) {
+      console.error("Database insert error:", error);
+      toast.error(error?.message || "Failed to initialize secure transaction in database.");
+      setProcessing(false);
+      return;
+    }
+
+    // 2. Lock the active donation ID to the reference state
+    donationIdRef.current = donation.id;
+
+    // 3. Close the Radix Dialog immediately to unblock pointer-events on the document body
+    setIsModalOpen(false);
+
+    // 4. Fire Paystack Checkout Modal
+    initializePaystack({
+      onSuccess: handlePaystackSuccess,
+      onClose: handlePaystackClose,
+    });
   };
 
-  const handleFlutterwaveSubmit = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (!name || !email || !amount || Number(amount) <= 0) {
-      toast.error("Please fill all details correctly.");
-      return;
-    }
-    if (!import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY) {
-      toast.error("Payment integration is not fully set up (Missing API Key).");
-      return;
-    }
-
-    handleFlutterPayment({
-      callback: async (response) => {
-        if (response.status === "successful" || response.status === "completed") {
-          // Log donation to database for CMS visibility
-          const { error } = await supabase.from("donations").insert({
-            campaign_id: selectedCampaign?.id || null,
-            donor_name: name,
-            donor_email: email,
-            amount: Number(amount),
-            currency: "NGN",
-            payment_status: "successful",
-            payment_reference: response.transaction_id ? String(response.transaction_id) : `tx-${Date.now()}`,
-            flutterwave_transaction_id: String(response.transaction_id || ""),
-          });
-
-          if (error) {
-            console.error("Failed to log donation:", error);
-            // We still show success since payment went through, but log error
-            toast.error("Payment successful but failed to log record.");
-          } else {
-            toast.success("Thank you for your generous donation!");
-            
-            // Update campaign amount_raised
-            if (selectedCampaign?.id) {
-              const newAmount = Number(selectedCampaign.amount_raised || 0) + Number(amount);
-              await supabase.from("donation_campaigns").update({ amount_raised: newAmount }).eq("id", selectedCampaign.id);
-              
-              // Update local state to reflect UI change immediately
-              setCampaigns(prev => prev.map(c => c.id === selectedCampaign.id ? { ...c, amount_raised: newAmount } : c));
-            }
-          }
-          
-        } else {
-          toast.error("Payment was not completed successfully.");
-        }
-        closePaymentModal();
-        setIsModalOpen(false);
-      },
-      onClose: () => {
-        // Payment modal closed
-      },
-    });
+  const handleDonateClick = (campaign: any) => {
+    setSelectedCampaign(campaign);
+    setAmount("");
+    setMessage("");
+    setIsModalOpen(true);
   };
 
   return (
     <Layout>
-      <section className="bg-gradient-hero text-primary-foreground">
-        <div className="container py-20 md:py-24">
+      {/* HERO SECTION */}
+      <section className="relative bg-black text-primary-foreground overflow-hidden">
+        <div className="absolute inset-0">
+          <img src={hero3} alt="ECU Alumni background" className="absolute inset-0 w-full h-full object-cover opacity-25" />
+          {/* Base gradient overlay matching brand deep blue */}
+          <div className="absolute inset-0 bg-gradient-to-r from-primary-deep/95 via-primary/85 to-primary/50" />
+          {/* Subtle red brand accent glow over the blue base */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsla(var(--accent)/0.35),transparent_65%)]" />
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-transparent to-accent/10 mix-blend-overlay" />
+        </div>
+        <div className="relative container py-28 md:py-36 lg:py-44 z-10">
           <FadeIn direction="up" delay={0.1}>
-            <div className="text-xs uppercase tracking-[0.25em] text-accent-soft mb-3 flex items-center gap-2"><Heart className="h-4 w-4 fill-current" /> Give Here</div>
+            <div className="text-xs uppercase tracking-[0.25em] text-accent-soft mb-3 flex items-center gap-2">
+              <Heart className="h-4 w-4 fill-current text-accent" /> Partner With Us
+            </div>
           </FadeIn>
           <FadeIn direction="up" delay={0.2}>
-            <h1 className="font-display text-4xl md:text-6xl font-bold mb-4 text-balance">Partner with us in building the next generation.</h1>
+            <h1 className="font-display text-4xl md:text-6xl font-bold mb-4 text-balance">
+              Partner with us in building the next generation.
+            </h1>
           </FadeIn>
           <FadeIn direction="up" delay={0.3}>
-            <p className="text-lg text-primary-foreground/85 max-w-2xl">Your giving supports student outreaches, leadership development, welfare support, and alumni initiatives.</p>
+            <p className="text-lg text-primary-foreground/85 max-w-2xl leading-relaxed">
+              Your giving supports student outreaches, leadership development, welfare support, and alumni initiatives at Obafemi Awolowo University.
+            </p>
           </FadeIn>
         </div>
       </section>
 
+      {/* CAMPAIGNS SECTION */}
       <section className="container py-16">
         {loading ? (
-          <div className="grid place-items-center py-20"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+          <div className="grid place-items-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
         ) : campaigns.length === 0 ? (
           <FadeIn direction="up">
-            <Card className="p-12 text-center">
-              <Heart className="h-10 w-10 text-accent mx-auto mb-4" />
-              <h3 className="font-display text-2xl font-bold mb-2">Donation campaigns coming soon</h3>
-              <p className="text-muted-foreground mb-6">Our admin will publish active campaigns here. In the meantime, please <Link to="/contact" className="text-primary underline">contact us</Link> to give directly.</p>
+            <Card className="p-12 text-center max-w-xl mx-auto border-dashed border-2">
+              <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="font-display text-2xl font-bold mb-2">No active campaigns</h3>
+              <p className="text-muted-foreground mb-6">
+                Our administrators will publish active giving campaigns here soon. In the meantime, you can reach out to give directly.
+              </p>
+              <Button asChild variant="outline">
+                <Link to="/contact">Contact Administration</Link>
+              </Button>
             </Card>
           </FadeIn>
         ) : (
           <StaggerContainer className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {campaigns.map((c) => {
-              const pct = c.target_amount ? Math.min(100, (Number(c.amount_raised) / Number(c.target_amount)) * 100) : 0;
+              const pct = c.target_amount
+                ? Math.min(
+                    100,
+                    (Number(c.amount_raised) / Number(c.target_amount)) * 100
+                  )
+                : 0;
+
               return (
                 <StaggerItem key={c.id}>
-                  <Card className="overflow-hidden hover:shadow-elegant transition-smooth flex flex-col h-full">
-                    <div className="aspect-[16/10] bg-secondary overflow-hidden">
+                  <Card className="overflow-hidden hover:shadow-elegant transition-smooth flex flex-col h-full border-border/60 hover:border-primary/20">
+                    <div className="aspect-[16/10] bg-secondary overflow-hidden relative group">
                       {c.featured_image_url ? (
-                        <img src={c.featured_image_url} alt={c.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-smooth duration-500" />
+                        <img
+                          src={c.featured_image_url}
+                          alt={c.title}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-smooth duration-500"
+                        />
                       ) : (
-                        <div className="w-full h-full bg-gradient-hero" />
-                      )}
-                    </div>
-                    <div className="p-6 flex-1 flex flex-col">
-                      <h3 className="font-display text-xl font-bold mb-2">{c.title}</h3>
-                      {c.description && <p className="text-sm text-muted-foreground line-clamp-3 mb-4">{c.description}</p>}
-                      {c.target_amount && (
-                        <div className="mb-4">
-                          <Progress value={pct} className="h-2" />
-                          <div className="flex justify-between text-xs mt-2">
-                            <span className="font-semibold text-primary">{fmt(Number(c.amount_raised))}</span>
-                            <span className="text-muted-foreground">of {fmt(Number(c.target_amount))}</span>
-                          </div>
+                        <div className="w-full h-full bg-gradient-hero flex items-center justify-center opacity-85">
+                          <Heart className="h-12 w-12 text-primary-foreground/30" />
                         </div>
                       )}
-                      <Button onClick={() => handleDonateClick(c)} className="mt-auto bg-accent hover:bg-accent/90 text-accent-foreground">
-                        Donate Now
+                    </div>
+
+                    <div className="p-6 flex-1 flex flex-col">
+                      <h3 className="font-display text-xl font-bold mb-2 text-foreground line-clamp-2">
+                        {c.title}
+                      </h3>
+
+                      {c.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-3 mb-6">
+                          {c.description}
+                        </p>
+                      )}
+
+                      {c.target_amount && (
+                        <div className="mb-6 mt-auto">
+                          <div className="flex justify-between text-xs mb-2">
+                            <span className="font-semibold text-primary">{fmt(Number(c.amount_raised))} raised</span>
+                            <span className="text-muted-foreground">goal of {fmt(Number(c.target_amount))}</span>
+                          </div>
+                          <Progress value={pct} className="h-2 bg-secondary" />
+                        </div>
+                      )}
+
+                      <Button
+                        onClick={() => handleDonateClick(c)}
+                        className="w-full mt-auto bg-accent hover:bg-accent/90 text-accent-foreground font-semibold shadow-glow"
+                      >
+                        Donate to Campaign
                       </Button>
                     </div>
                   </Card>
@@ -231,39 +330,126 @@ const Donate = () => {
         )}
       </section>
 
+      {/* SECURE DONATION FLOW MODAL (SHADCN DIALOG) */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-background border-border/80 p-6 rounded-2xl shadow-elegant max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Donate to {selectedCampaign?.title}</DialogTitle>
-            <DialogDescription>
-              Please enter your details to proceed to secure checkout.
+            <div className="h-10 w-10 rounded-full bg-accent/10 text-accent flex items-center justify-center mb-2">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <DialogTitle className="font-display text-2xl font-bold text-foreground">
+              Donate to {selectedCampaign?.title}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
+              Your contribution will support kingdom work. Transactions are securely processed via Paystack.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="John Doe" />
+
+          <form onSubmit={handleCheckoutSubmit} className="space-y-4 mt-2">
+            <div className="space-y-1">
+              <Label htmlFor="donorName" className="text-xs font-semibold text-muted-foreground">Full Name</Label>
+              <Input
+                id="donorName"
+                required
+                value={donorName}
+                onChange={(e) => setDonorName(e.target.value)}
+                placeholder="John Doe"
+                className="bg-secondary/40 border-border/40 focus-visible:ring-primary"
+              />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="john@example.com" />
+
+            <div className="space-y-1">
+              <Label htmlFor="donorEmail" className="text-xs font-semibold text-muted-foreground">Email Address</Label>
+              <Input
+                id="donorEmail"
+                type="email"
+                required
+                value={donorEmail}
+                onChange={(e) => setDonorEmail(e.target.value)}
+                placeholder="johndoe@example.com"
+                className="bg-secondary/40 border-border/40 focus-visible:ring-primary"
+              />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="amount">Amount (NGN)</Label>
-              <Input id="amount" type="number" min="100" required value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="1000" />
+
+            <div className="space-y-1">
+              <Label htmlFor="donorPhone" className="text-xs font-semibold text-muted-foreground">Phone Number (Optional)</Label>
+              <Input
+                id="donorPhone"
+                type="tel"
+                value={donorPhone}
+                onChange={(e) => setDonorPhone(e.target.value)}
+                placeholder="+234..."
+                className="bg-secondary/40 border-border/40 focus-visible:ring-primary"
+              />
             </div>
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <Button onClick={handleFlutterwaveSubmit} className="w-full bg-orange-500 hover:bg-orange-600 text-white">
-                Pay with Flutterwave
-              </Button>
-              <Button onClick={handlePaystackSubmit} className="w-full bg-[#0ba4db] hover:bg-[#0ba4db]/90 text-white">
-                Pay with Paystack
-              </Button>
+
+            <div className="space-y-1">
+              <Label htmlFor="amount" className="text-xs font-semibold text-muted-foreground">Donation Amount (NGN)</Label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">₦</span>
+                <Input
+                  id="amount"
+                  type="number"
+                  min="100"
+                  required
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="pl-8 bg-secondary/40 border-border/40 focus-visible:ring-primary font-semibold text-foreground"
+                />
+              </div>
             </div>
-          </div>
+
+            {/* Dynamic Suggested Amounts Quick Selection */}
+            {selectedCampaign && Array.isArray(selectedCampaign.suggested_amounts) && selectedCampaign.suggested_amounts.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {selectedCampaign.suggested_amounts.map((item: number) => (
+                  <button
+                    type="button"
+                    key={item}
+                    onClick={() => setAmount(String(item))}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-smooth border ${
+                      amount === String(item)
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-secondary/50 text-muted-foreground border-border/40 hover:bg-secondary"
+                    }`}
+                  >
+                    {fmt(Number(item))}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="space-y-1">
+              <Label htmlFor="message" className="text-xs font-semibold text-muted-foreground">Add a Message (Optional)</Label>
+              <Input
+                id="message"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="May God bless ECU..."
+                className="bg-secondary/40 border-border/40 focus-visible:ring-primary"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 text-[11px] text-muted-foreground bg-secondary/30 p-2.5 rounded-lg border border-border/20 mt-3">
+              <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" />
+              <span>We never store card details. Paystack secures all payments with PCI-DSS compliance.</span>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={processing}
+              className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold mt-4 h-11 shadow-glow"
+            >
+              {processing ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <CreditCard className="h-4 w-4 mr-2" />
+              )}
+              {amount ? `Pay Securely ${fmt(Number(amount))}` : "Proceed to Secure Pay"}
+            </Button>
+          </form>
         </DialogContent>
       </Dialog>
-
     </Layout>
   );
 };

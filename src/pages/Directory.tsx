@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, MapPin, Briefcase, GraduationCap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import hero2 from "/assets/hero2.jpg";
 
 const Directory = () => {
   const [members, setMembers] = useState<any[]>([]);
@@ -26,8 +27,16 @@ const Directory = () => {
 
   return (
     <Layout>
-      <section className="bg-gradient-hero text-primary-foreground">
-        <div className="container py-20 md:py-24">
+      <section className="relative bg-black text-primary-foreground overflow-hidden">
+        <div className="absolute inset-0">
+          <img src={hero2} alt="ECU Alumni background" className="absolute inset-0 w-full h-full object-cover opacity-25" />
+          {/* Base gradient overlay matching brand deep blue */}
+          <div className="absolute inset-0 bg-gradient-to-r from-primary-deep/95 via-primary/85 to-primary/50" />
+          {/* Subtle red brand accent glow over the blue base */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsla(var(--accent)/0.35),transparent_65%)]" />
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-transparent to-accent/10 mix-blend-overlay" />
+        </div>
+        <div className="relative container py-28 md:py-36 lg:py-44 z-10">
           <div className="text-xs uppercase tracking-[0.25em] text-accent-soft mb-3">Alumni Directory</div>
           <h1 className="font-display text-4xl md:text-6xl font-bold mb-4">Connecting generations of ECUites</h1>
           <p className="text-lg text-primary-foreground/85 max-w-2xl">Discover and connect with alumni across professions, cities, and decades.</p>

@@ -55,7 +55,11 @@ const Index = () => {
                 }`}
             />
           ))}
-          <div className="absolute inset-0 bg-gradient-to-r from-primary-deep/95 via-primary/85 to-primary/60" />
+          {/* Base gradient overlay matching brand deep blue */}
+          <div className="absolute inset-0 bg-gradient-to-r from-primary-deep/95 via-primary/85 to-primary/50" />
+          {/* Subtle red brand accent glow over the blue base */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsla(var(--accent)/0.4),transparent_65%)]" />
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-transparent to-accent/15 mix-blend-overlay" />
         </div>
         <div className="relative container py-24 md:py-36 lg:py-44">
           <div className="max-w-3xl text-primary-foreground">
@@ -94,7 +98,14 @@ const Index = () => {
       {/* ABOUT */}
       <section className="container py-20 md:py-28 grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
         <FadeIn direction="right" className="relative">
-          <img src={about} alt="ECU alumni fellowship" loading="lazy" width={1280} height={896} className="rounded-2xl shadow-elegant w-full" />
+          <img 
+            src={about} 
+            alt="ECU alumni fellowship" 
+            loading="lazy" 
+            width={1280} 
+            height={896} 
+            className="rounded-2xl shadow-elegant w-full h-[320px] md:h-[420px] object-cover object-top" 
+          />
           <div className="absolute -bottom-6 -right-6 bg-accent text-accent-foreground rounded-2xl p-6 shadow-elegant hidden md:block">
             <div className="font-display text-4xl font-bold">Decades</div>
             <div className="text-sm opacity-90">of faith & legacy</div>

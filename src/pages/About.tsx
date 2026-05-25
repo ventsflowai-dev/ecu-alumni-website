@@ -17,8 +17,16 @@ const beliefs = [
 
 const About = () => (
   <Layout>
-    <section className="bg-gradient-hero text-primary-foreground">
-      <div className="container py-20 md:py-28">
+    <section className="relative bg-black text-primary-foreground overflow-hidden">
+      <div className="absolute inset-0">
+        <img src={about} alt="ECU Alumni background" className="absolute inset-0 w-full h-full object-cover opacity-25" />
+        {/* Base gradient overlay matching brand deep blue */}
+        <div className="absolute inset-0 bg-gradient-to-r from-primary-deep/95 via-primary/85 to-primary/50" />
+        {/* Subtle red brand accent glow over the blue base */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsla(var(--accent)/0.35),transparent_65%)]" />
+        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-transparent to-accent/10 mix-blend-overlay" />
+      </div>
+      <div className="relative container py-28 md:py-36 lg:py-44 z-10">
         <div className="max-w-3xl">
           <FadeIn direction="up" delay={0.1}>
             <div className="text-xs uppercase tracking-[0.25em] text-accent-soft mb-4">Our Story</div>

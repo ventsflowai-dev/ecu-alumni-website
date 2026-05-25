@@ -59,7 +59,7 @@ const App = () => (
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute adminOnly><Admin /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
-            <Route path="/cms" element={<ProtectedRoute><CMSLayout /></ProtectedRoute>}>
+            <Route path="/cms" element={<ProtectedRoute adminOnly><CMSLayout /></ProtectedRoute>}>
   <Route index element={<CMSDashboard />} />
   <Route path="blog" element={<CMSBlog />} />
   <Route path="events" element={<CMSEvents />} />

@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Calendar, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/FadeIn";
+import hero4 from "/assets/hero4.jpg";
 
 const Gallery = () => {
   const [items, setItems] = useState<any[]>([]);
@@ -13,8 +14,16 @@ const Gallery = () => {
 
   return (
     <Layout>
-      <section className="bg-gradient-hero text-primary-foreground">
-        <div className="container py-20 md:py-24">
+      <section className="relative bg-black text-primary-foreground overflow-hidden">
+        <div className="absolute inset-0">
+          <img src={hero4} alt="ECU Alumni background" className="absolute inset-0 w-full h-full object-cover opacity-25" />
+          {/* Base gradient overlay matching brand deep blue */}
+          <div className="absolute inset-0 bg-gradient-to-r from-primary-deep/95 via-primary/85 to-primary/50" />
+          {/* Subtle red brand accent glow over the blue base */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsla(var(--accent)/0.35),transparent_65%)]" />
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-transparent to-accent/10 mix-blend-overlay" />
+        </div>
+        <div className="relative container py-28 md:py-36 lg:py-44 z-10">
           <FadeIn direction="up" delay={0.1}>
             <div className="text-xs uppercase tracking-[0.25em] text-accent-soft mb-3">Gallery</div>
           </FadeIn>

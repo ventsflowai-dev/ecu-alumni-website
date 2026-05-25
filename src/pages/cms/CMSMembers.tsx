@@ -65,7 +65,10 @@ export default function CMSMembers() {
     if (data) {
       const rolesMap: Record<string, string> = {};
       data.forEach((r: any) => {
-        rolesMap[r.user_id] = r.role;
+        // Prioritize 'admin' role so it is never overwritten by 'member'
+        if (r.role === "admin" || !rolesMap[r.user_id]) {
+          rolesMap[r.user_id] = r.role;
+        }
       });
       setUserRoles(rolesMap);
     }
