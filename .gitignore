@@ -23,3 +23,11 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Scratch files & local backups
+scratch_*.js
+*.stashed.tsx
+
+# Supabase temp directories
+supabase/.temp/
+.temp/
