@@ -89,30 +89,203 @@ const Dashboard = () => {
     const doc = new jsPDF();
     
     try {
-      await addLogo(doc, 95, 10, 20, 20);
+      await addLogo(doc, 20, 20, 22, 22);
     } catch (e) {
       console.error("Failed to load logo for PDF");
     }
 
+    // Elegant letterhead/brand header next to top-left logo
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(20);
-    doc.text("Evangelical Christian Union Alumni Fellowship", 105, 40, { align: "center" });
-    
     doc.setFontSize(14);
-    doc.text("Donation Receipt", 105, 50, { align: "center" });
+    doc.setTextColor(29, 44, 134); // Brand Primary Royal Blue
+    doc.text("EVANGELICAL CHRISTIAN UNION ALUMNI FELLOWSHIP", 47, 26);
     
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(12);
-    doc.text(`Date: ${new Date(donation.created_at).toLocaleDateString()}`, 20, 70);
-    doc.text(`Donor Name: ${donation.donor_name || profile?.full_name || "N/A"}`, 20, 80);
-    doc.text(`Email: ${donation.donor_email || profile?.email || "N/A"}`, 20, 90);
-    doc.text(`Campaign: ${donation.donation_campaigns?.title || "General Donation"}`, 20, 100);
-    doc.text(`Amount: ${donation.currency} ${Number(donation.amount).toLocaleString()}`, 20, 110);
-    doc.text(`Reference: ${donation.payment_reference || "N/A"}`, 20, 120);
-    doc.text(`Status: ${donation.payment_status}`, 20, 130);
-    
-    doc.text("Thank you for your generous donation!", 105, 160, { align: "center" });
-    
+    doc.setFontSize(9);
+    doc.setTextColor(80, 85, 114); // Brand Muted Blue-Grey
+    doc.text("Obafemi Awolowo University, Ile-Ife, Nigeria", 47, 31);
+    doc.text("Email: info@ecualumni.org | Web: ecualumni.org", 47, 36);
+
+    // Two-tone brand stripe divider lines
+    doc.setDrawColor(29, 44, 134); // Royal Blue
+    doc.setLineWidth(1.5);
+    doc.line(20, 45, 190, 45);
+
+    doc.setDrawColor(227, 28, 48); // Accent Red
+    doc.setLineWidth(0.5);
+    doc.line(20, 47, 190, 47);
+
+    // Receipt Title & Support Subtitle
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.setTextColor(17, 27, 95); // Deep navy
+    doc.text("OFFICIAL DONATION RECEIPT", 20, 58);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(80, 85, 114);
+    doc.text("Thank you for your generous support. Your contribution is highly appreciated.", 20, 64);
+
+    // High-visibility Donation Amount Banner Box
+    doc.setFillColor(245, 246, 250); // soft grey background
+    doc.rect(20, 70, 170, 24, "F");
+
+    doc.setFillColor(29, 44, 134); // Primary Accent strip on left of banner
+    doc.rect(20, 70, 3, 24, "F");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(80, 85, 114);
+    doc.text("DONATION AMOUNT", 28, 78);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.setTextColor(29, 44, 134);
+    const amountVal = `${donation.currency || "NGN"} ${Number(donation.amount).toLocaleString()}`;
+    doc.text(amountVal, 28, 88);
+
+    // Payment Status badge in banner
+    doc.setFillColor(220, 252, 231); // Success soft green background
+    doc.rect(130, 78, 50, 8, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(21, 128, 61); // dark success green
+    doc.text("PAYMENT SUCCESSFUL", 155, 83.5, { align: "center" });
+
+    // Grid of Details Section Headers
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(29, 44, 134);
+    doc.text("DONOR INFORMATION", 20, 108);
+    doc.text("TRANSACTION DETAILS", 110, 108);
+
+    // Section sub-header divider lines
+    doc.setDrawColor(222, 224, 235);
+    doc.setLineWidth(0.5);
+    doc.line(20, 111, 95, 111);
+    doc.line(110, 111, 190, 111);
+
+    const curY = 118;
+    const donorNameVal = donation.donor_name || profile?.full_name || "Anonymous Donor";
+    const donorEmailVal = donation.donor_email || profile?.email || "N/A";
+    const donorPhoneVal = donation.donor_phone || profile?.phone || "N/A";
+
+    // Column 1: Donor Information Details
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(80, 85, 114);
+    doc.text("DONOR NAME", 20, curY);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(17, 27, 95);
+    doc.text(donorNameVal, 20, curY + 5);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(80, 85, 114);
+    doc.text("EMAIL ADDRESS", 20, curY + 15);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(17, 27, 95);
+    doc.text(donorEmailVal, 20, curY + 20);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(80, 85, 114);
+    doc.text("PHONE NUMBER", 20, curY + 30);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(17, 27, 95);
+    doc.text(donorPhoneVal, 20, curY + 35);
+
+    // Column 2: Transaction Details
+    const paymentRef = donation.payment_reference || "N/A";
+    const campaignTitle = donation.donation_campaigns?.title || "General Fellowship Support";
+    const paymentDateStr = new Date(donation.created_at).toLocaleDateString(undefined, {
+      year: 'numeric', month: 'long', day: 'numeric'
+    });
+    const receiptGenDateStr = new Date().toLocaleDateString(undefined, {
+      year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(80, 85, 114);
+    doc.text("SUPPORTED CAMPAIGN", 110, curY);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(17, 27, 95);
+    const splitCampaign = doc.splitTextToSize(campaignTitle, 80);
+    doc.text(splitCampaign, 110, curY + 5);
+
+    const campaignLinesCount = splitCampaign.length;
+    const campaignOffset = (campaignLinesCount - 1) * 4.5;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(80, 85, 114);
+    doc.text("TRANSACTION REFERENCE", 110, curY + 15 + campaignOffset);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(17, 27, 95);
+    doc.text(paymentRef, 110, curY + 20 + campaignOffset);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(80, 85, 114);
+    doc.text("PAYMENT METHOD", 110, curY + 30 + campaignOffset);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(17, 27, 95);
+    doc.text("Paystack Checkout (Secure)", 110, curY + 35 + campaignOffset);
+
+    // Section for Dates and Generation metadata
+    const dateSectionY = curY + 50 + campaignOffset;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(29, 44, 134);
+    doc.text("DATE & METADATA", 20, dateSectionY);
+
+    doc.setDrawColor(222, 224, 235);
+    doc.setLineWidth(0.5);
+    doc.line(20, dateSectionY + 3, 190, dateSectionY + 3);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(80, 85, 114);
+    doc.text("DATE OF PAYMENT", 20, dateSectionY + 10);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(17, 27, 95);
+    doc.text(paymentDateStr, 20, dateSectionY + 15);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(80, 85, 114);
+    doc.text("RECEIPT GENERATED ON", 110, dateSectionY + 10);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(17, 27, 95);
+    doc.text(receiptGenDateStr, 110, dateSectionY + 15);
+
+    // Elegant professional footer
+    const footerY = 252;
+    doc.setDrawColor(222, 224, 235);
+    doc.setLineWidth(0.5);
+    doc.line(20, footerY, 190, footerY);
+
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9.5);
+    doc.setTextColor(29, 44, 134);
+    doc.text("“Every man shall give as he is able, according to the blessing of the Lord your God which He has given you.”", 105, footerY + 8, { align: "center" });
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(120, 125, 150);
+    doc.text("This is an electronically generated document. No physical signature is required.", 105, footerY + 15, { align: "center" });
+    doc.text("Evangelical Christian Union Alumni Fellowship © 2026. All Rights Reserved.", 105, footerY + 20, { align: "center" });
+
     doc.save(`Receipt_${donation.payment_reference || donation.id}.pdf`);
   };
 
@@ -120,39 +293,111 @@ const Dashboard = () => {
     const doc = new jsPDF();
     
     try {
-      await addLogo(doc, 95, 10, 20, 20);
+      await addLogo(doc, 20, 20, 22, 22);
     } catch (e) {
       console.error("Failed to load logo for PDF");
     }
 
+    // Elegant brand header matching single receipt
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-    doc.text("ECU Alumni Fellowship - All Donations", 105, 40, { align: "center" });
+    doc.setFontSize(14);
+    doc.setTextColor(29, 44, 134);
+    doc.text("EVANGELICAL CHRISTIAN UNION ALUMNI FELLOWSHIP", 47, 26);
     
-    doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
-    doc.text(`Donor: ${profile?.full_name || user?.email}`, 14, 50);
-    doc.text(`Date Generated: ${new Date().toLocaleDateString()}`, 14, 60);
+    doc.setFontSize(9);
+    doc.setTextColor(80, 85, 114);
+    doc.text("Obafemi Awolowo University, Ile-Ife, Nigeria", 47, 31);
+    doc.text("Email: info@ecualumni.org | Web: ecualumni.org", 47, 36);
+
+    // Two-tone divider lines
+    doc.setDrawColor(29, 44, 134);
+    doc.setLineWidth(1.5);
+    doc.line(20, 45, 190, 45);
+
+    doc.setDrawColor(227, 28, 48);
+    doc.setLineWidth(0.5);
+    doc.line(20, 47, 190, 47);
+
+    // Title and Meta information
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.setTextColor(17, 27, 95);
+    doc.text("DONATION SUMMARY & HISTORY", 20, 58);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(80, 85, 114);
+    doc.text(`Donor Profile: ${profile?.full_name || "N/A"} (${profile?.email || user?.email || "N/A"})`, 20, 64);
+    doc.text(`Summary generated on: ${new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`, 20, 69);
 
     const successfulDonations = donations.filter((d) => d.payment_status === "successful");
     
     const tableData = successfulDonations.map((d) => [
-      new Date(d.created_at).toLocaleDateString(),
-      d.donation_campaigns?.title || "General",
+      new Date(d.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }),
+      d.donation_campaigns?.title || "General Fellowship Support",
       `${d.currency} ${Number(d.amount).toLocaleString()}`,
       d.payment_reference || "—",
     ]);
 
     const total = successfulDonations.reduce((sum, d) => sum + Number(d.amount), 0);
 
+    // Premium table rendering using jspdf-autotable
     autoTable(doc, {
-      startY: 70,
-      head: [["Date", "Campaign", "Amount", "Reference"]],
+      startY: 75,
+      margin: { left: 20, right: 20 },
+      head: [["Date", "Campaign / Purpose", "Amount", "Transaction Reference"]],
       body: tableData,
-      foot: [["", "Total", `NGN ${total.toLocaleString()}`, ""]],
+      foot: [["", "Cumulative Total", `NGN ${total.toLocaleString()}`, ""]],
+      theme: "striped",
+      headStyles: {
+        fillColor: [29, 44, 134],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+        fontSize: 9,
+      },
+      footStyles: {
+        fillColor: [245, 246, 250],
+        textColor: [29, 44, 134],
+        fontStyle: "bold",
+        fontSize: 9.5,
+      },
+      bodyStyles: {
+        fontSize: 9,
+        textColor: [50, 50, 50],
+      },
+      columnStyles: {
+        0: { cellWidth: 35 },
+        1: { cellWidth: 65 },
+        2: { cellWidth: 30, fontStyle: "bold" },
+        3: { cellWidth: 40 },
+      },
+      alternateRowStyles: {
+        fillColor: [250, 251, 253],
+      },
     });
 
-    doc.save("All_Donations_Receipt.pdf");
+    const finalY = (doc as any).lastAutoTable.finalY || 180;
+    const footerY = Math.max(finalY + 15, 252);
+
+    if (footerY < 280) {
+      doc.setDrawColor(222, 224, 235);
+      doc.setLineWidth(0.5);
+      doc.line(20, footerY, 190, footerY);
+
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(9.5);
+      doc.setTextColor(29, 44, 134);
+      doc.text("“Every man shall give as he is able, according to the blessing of the Lord your God which He has given you.”", 105, footerY + 8, { align: "center" });
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(120, 125, 150);
+      doc.text("This is an electronically generated statement of all recorded contributions.", 105, footerY + 15, { align: "center" });
+      doc.text("Evangelical Christian Union Alumni Fellowship © 2026. All Rights Reserved.", 105, footerY + 20, { align: "center" });
+    }
+
+    doc.save("ECU_Alumni_Donation_Summary.pdf");
   };
 
   if (!profile) return <Layout><div className="container py-32 grid place-items-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div></Layout>;
