@@ -78,9 +78,9 @@ Deno.serve(async (req) => {
     const expectedAmountKobo = Math.round(Number(donation.amount) * 100)
     const paidAmountKobo = paystackData.data.amount
 
-    // Tolerance range check to avoid floating point issues (allows 50 kobo difference max)
-    if (Math.abs(expectedAmountKobo - paidAmountKobo) > 50) { 
-      throw new Error(`Amount mismatch. Expected: ${expectedAmountKobo} kobo, Paid: ${paidAmountKobo} kobo.`)
+    // Ensure the paid amount is at least the expected amount (allowing for gateway fees added to the transaction)
+    if (paidAmountKobo < expectedAmountKobo) { 
+      throw new Error(`Amount mismatch. Expected at least: ${expectedAmountKobo} kobo, Paid: ${paidAmountKobo} kobo.`)
     }
 
     // Update donation status to successful and log reference

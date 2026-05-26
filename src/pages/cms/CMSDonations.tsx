@@ -6,6 +6,14 @@ import { Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 export default function CMSDonations() {
   const [donations, setDonations] = useState<any[]>([]);
@@ -26,6 +34,49 @@ export default function CMSDonations() {
       setDonations(data || []);
     }
     setLoading(false);
+  };
+
+  const updateStatus = async (donationId: string, currentStatus: "successful" | "pending" | "failed", newStatus: "successful" | "pending" | "failed") => {
+    if (currentStatus === newStatus) return;
+    
+    const updatingToast = toast.loading(`Updating status to ${newStatus}...`);
+    
+    try {
+      const { error } = await supabase
+        .from("donations")
+        .update({ payment_status: newStatus })
+        .eq("id", donationId);
+        
+      if (error) throw error;
+      
+      // If we are marking a donation as successful, let's also increment the campaign's amount_raised if appropriate!
+      if (newStatus === "successful") {
+        const donation = donations.find(d => d.id === donationId);
+        if (donation && donation.campaign_id) {
+          const { data: campaign } = await supabase
+            .from("donation_campaigns")
+            .select("amount_raised")
+            .eq("id", donation.campaign_id)
+            .single();
+            
+          if (campaign) {
+            const newRaisedAmount = Number(campaign.amount_raised) + Number(donation.amount);
+            await supabase
+              .from("donation_campaigns")
+              .update({ amount_raised: newRaisedAmount })
+              .eq("id", donation.campaign_id);
+          }
+        }
+      }
+      
+      toast.success("Donation status updated successfully!");
+      fetchDonations();
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Failed to update donation status");
+    } finally {
+      toast.dismiss(updatingToast);
+    }
   };
 
   useEffect(() => {
@@ -108,9 +159,32 @@ export default function CMSDonations() {
                       <td className="px-6 py-4">{d.donation_campaigns?.title || "General"}</td>
                       <td className="px-6 py-4 font-semibold text-primary">{fmt(Number(d.amount), d.currency)}</td>
                       <td className="px-6 py-4">
-                        <Badge variant={d.payment_status === "successful" ? "default" : d.payment_status === "pending" ? "outline" : "destructive"}>
-                          {d.payment_status}
-                        </Badge>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger className={`
+                            inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer hover:opacity-80 select-none gap-1
+                            ${d.payment_status === "successful" 
+                              ? "border-transparent bg-primary text-primary-foreground hover:bg-primary/80" 
+                              : d.payment_status === "pending" 
+                                ? "text-foreground border-border bg-transparent" 
+                                : "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80"
+                            }
+                          `}>
+                            {d.payment_status} <span className="text-[10px]">▼</span>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="bg-background border border-border shadow-elegant">
+                            <DropdownMenuLabel>Update Status</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => updateStatus(d.id, d.payment_status, "pending")} className="cursor-pointer">
+                              Mark as Pending
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => updateStatus(d.id, d.payment_status, "successful")} className="cursor-pointer">
+                              Mark as Successful
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => updateStatus(d.id, d.payment_status, "failed")} className="cursor-pointer">
+                              Mark as Failed
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </td>
                       <td className="px-6 py-4 text-muted-foreground whitespace-nowrap">
                         {new Date(d.created_at).toLocaleDateString()}
