@@ -49,8 +49,21 @@ export const Footer = () => (
     </div>
 
     <div className="border-t border-sidebar-border">
-      <div className="container py-6 text-center text-xs text-sidebar-foreground/60">
-        © {new Date().getFullYear()} Evangelical Christian Union Alumni Fellowship. All rights reserved.
+      <div className="container py-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-sidebar-foreground/60">
+        <div>
+          © {new Date().getFullYear()} Evangelical Christian Union Alumni Fellowship. All rights reserved.
+        </div>
+        <div>
+          Powered by{" "}
+          <a
+            href="https://www.ventsflowai.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-accent font-semibold transition-smooth"
+          >
+            Ventsflow AI
+          </a>
+        </div>
       </div>
     </div>
   </footer>
