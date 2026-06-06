@@ -18,7 +18,7 @@ import autoTable from "jspdf-autotable";
 import { Download } from "lucide-react";
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
   const [profile, setProfile] = useState<any | null>(null);
   const [donations, setDonations] = useState<any[]>([]);
   const [announcements, setAnnouncements] = useState<any[]>([]);
@@ -401,6 +401,43 @@ const Dashboard = () => {
   };
 
   if (!profile) return <Layout><div className="container py-32 grid place-items-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div></Layout>;
+
+  if (profile.status !== "approved" && !isAdmin) {
+    const isPending = profile.status === "pending";
+    return (
+      <Layout>
+        <div className="container max-w-md py-24">
+          <Card className="p-8 text-center border border-border/80 shadow-elegant">
+            {isPending ? (
+              <>
+                <div className="h-12 w-12 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center mx-auto mb-4">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+                <h2 className="font-display text-2xl font-bold mb-2">Account Pending Review</h2>
+                <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+                  Thank you for signing up! Your profile is currently under review by the alumni administration. 
+                  You will receive an email notification as soon as your account has been verified.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="h-12 w-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-4">
+                  <User className="h-6 w-6 text-red-500" />
+                </div>
+                <h2 className="font-display text-2xl font-bold mb-2 text-destructive">Account Suspended</h2>
+                <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+                  Your account has been suspended by the administrators. If you believe this is a mistake, please contact support.
+                </p>
+              </>
+            )}
+            <Button onClick={signOut} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+              Sign Out
+            </Button>
+          </Card>
+        </div>
+      </Layout>
+    );
+  }
 
   const statusColor = profile.status === "approved" ? "bg-green-100 text-green-800" : profile.status === "pending" ? "bg-amber-100 text-amber-800" : "bg-red-100 text-red-800";
 
