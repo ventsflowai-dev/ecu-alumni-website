@@ -359,6 +359,7 @@ export type Database = {
           show_phone_publicly: boolean
           social_links: Json | null
           status: Database["public"]["Enums"]["profile_status"]
+          subgroups: string | null
           updated_at: string
           user_id: string
           workplace: string | null
@@ -382,6 +383,7 @@ export type Database = {
           show_phone_publicly?: boolean
           social_links?: Json | null
           status?: Database["public"]["Enums"]["profile_status"]
+          subgroups?: string | null
           updated_at?: string
           user_id: string
           workplace?: string | null
@@ -405,6 +407,7 @@ export type Database = {
           show_phone_publicly?: boolean
           social_links?: Json | null
           status?: Database["public"]["Enums"]["profile_status"]
+          subgroups?: string | null
           updated_at?: string
           user_id?: string
           workplace?: string | null

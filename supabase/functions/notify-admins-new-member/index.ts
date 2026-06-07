@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
     }
 
     const record = payload.record
-    const { full_name, email, department, graduation_year } = record
+    const { full_name, email, department, graduation_year, subgroups } = record
 
     // Initialize Supabase Client with service role key to bypass RLS and query admins
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -117,6 +117,10 @@ Deno.serve(async (req) => {
               <td style="padding: 6px 0; font-weight: bold; color: #666;">Graduation Year:</td>
               <td style="padding: 6px 0; color: #111;">${graduation_year || 'N/A'}</td>
             </tr>
+            <tr>
+              <td style="padding: 6px 0; font-weight: bold; color: #666;">Subgroup(s):</td>
+              <td style="padding: 6px 0; color: #111;">${subgroups || 'N/A'}</td>
+            </tr>
           </table>
         </div>
 
@@ -156,8 +160,59 @@ Deno.serve(async (req) => {
     const resendData = await resendResponse.json()
     console.log('Resend email response:', resendData)
 
+    // 4. Send welcome confirmation email to the registering user
+    if (email) {
+      console.log(`Sending welcome confirmation email to user: ${email}`)
+      const userSubject = `Your ECU Alumni Portal Account Registration 📥`
+      const userHtml = `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333; line-height: 1.6;">
+          <p>Dear ${full_name || 'Alumni Member'},</p>
+          <p>Thank you for registering on the official ECU OAU Alumni Association Portal. We are thrilled to have you reconnect with the global family!</p>
+          <p>To protect the integrity of our network and ensure our database remains a safe space exclusive to verified members of the Evangelical Christian Union alumni body, your account configuration has been placed in our verification queue.</p>
+          
+          <h3 style="color: #111; margin-top: 25px; margin-bottom: 10px; font-size: 16px;">What happens next?</h3>
+          <p>The portal administrators are currently reviewing your registration framework. You will receive an automated confirmation email immediately your access profile is approved. This processing typically takes 3 to 4 working days.</p>
+          <p>If any extra verification criteria are needed to clear your profile records, an executive team member will reach out directly to you via this email address.</p>
+          
+          <p style="margin-top: 30px;">In fellowship,</p>
+          <p><strong>The Secretariat Team</strong><br>ECU OAU Alumni Association</p>
+          
+          <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;" />
+          <p style="font-size: 12px; color: #888; text-align: center; line-height: 1.4; font-weight: bold;">
+            Building Legacy, Sustaining Fellowship.
+          </p>
+        </div>
+      `
+
+      try {
+        const userResendResponse = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: fromEmail,
+            to: [email],
+            subject: userSubject,
+            html: userHtml,
+          })
+        })
+
+        if (!userResendResponse.ok) {
+          const userResendError = await userResendResponse.text()
+          console.error('Resend user email error:', userResendError)
+        } else {
+          const userResendData = await userResendResponse.json()
+          console.log('Resend user email response:', userResendData)
+        }
+      } catch (err) {
+        console.error('Failed to send user email:', err)
+      }
+    }
+
     return new Response(
-      JSON.stringify({ success: true, message: 'Admins notified successfully via Resend.' }),
+      JSON.stringify({ success: true, message: 'Admins and user notified successfully via Resend.' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
 

@@ -481,6 +481,7 @@ const Dashboard = () => {
                 <div><Label>Year of graduation</Label><Input type="number" value={profile.graduation_year ?? ""} onChange={(e) => updateField("graduation_year", e.target.value ? parseInt(e.target.value) : null)} /></div>
                 <div><Label>Department / course</Label><Input value={profile.department ?? ""} onChange={(e) => updateField("department", e.target.value)} /></div>
                 <div><Label>Faculty</Label><Input value={profile.faculty ?? ""} onChange={(e) => updateField("faculty", e.target.value)} /></div>
+                <div><Label>Subgroup(s) in Fellowship</Label><Input value={profile.subgroups ?? ""} placeholder="e.g. Choir, Prayer, Drama" onChange={(e) => updateField("subgroups", e.target.value)} /></div>
                 <div><Label>Current city</Label><Input value={profile.current_city ?? ""} onChange={(e) => updateField("current_city", e.target.value)} /></div>
                 <div><Label>Current country</Label><Input value={profile.current_country ?? ""} onChange={(e) => updateField("current_country", e.target.value)} /></div>
                 <div><Label>Profession / industry</Label><Input value={profile.profession ?? ""} onChange={(e) => updateField("profession", e.target.value)} /></div>

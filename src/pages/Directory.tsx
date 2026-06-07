@@ -3,7 +3,8 @@ import { Layout } from "@/components/Layout";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, MapPin, Briefcase, GraduationCap } from "lucide-react";
+import { Search, MapPin, Briefcase, GraduationCap, Users } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import hero2 from "/assets/hero2.jpg";
 
@@ -13,7 +14,7 @@ const Directory = () => {
 
   useEffect(() => {
     supabase.from("profiles")
-      .select("id,full_name,email,phone,graduation_year,department,faculty,profession,current_city,current_country,profile_photo_url,bio,show_email_publicly,show_phone_publicly")
+      .select("id,full_name,email,phone,graduation_year,department,faculty,profession,current_city,current_country,profile_photo_url,bio,show_email_publicly,show_phone_publicly,subgroups")
       .eq("status", "approved").eq("directory_consent", true)
       .order("full_name")
       .then(({ data }) => setMembers(data ?? []));
@@ -21,7 +22,7 @@ const Directory = () => {
 
   const filtered = members.filter((m) => {
     const s = q.toLowerCase();
-    return !s || [m.full_name, m.department, m.faculty, m.profession, m.current_city, m.current_country, String(m.graduation_year ?? "")]
+    return !s || [m.full_name, m.department, m.faculty, m.profession, m.current_city, m.current_country, String(m.graduation_year ?? ""), m.subgroups]
       .some((v) => v?.toLowerCase().includes(s));
   });
 
@@ -97,6 +98,15 @@ const Directory = () => {
     </li>
   )}
 </ul>
+                {m.subgroups && (
+                  <div className="flex flex-wrap justify-center gap-1 mt-4 pt-4 border-t border-border/50">
+                    {m.subgroups.split(",").map((s: string) => s.trim()).filter(Boolean).map((sub: string) => (
+                      <Badge key={sub} variant="secondary" className="text-[10px] py-0.5 px-2 font-medium bg-secondary/80 text-muted-foreground border-none">
+                        {sub}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </Card>
             ))}
           </div>

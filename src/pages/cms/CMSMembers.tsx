@@ -25,6 +25,7 @@ type Member = {
   bio: string;
   profile_photo_url: string;
   status: MemberStatus;
+  subgroups?: string;
   created_at?: string;
 };
 
@@ -125,7 +126,7 @@ export default function CMSMembers() {
   }
 
   const filteredMembers = members.filter((member) => {
-    const value = `${member.full_name} ${member.email} ${member.department} ${member.graduation_year} ${member.profession}`
+    const value = `${member.full_name} ${member.email} ${member.department} ${member.graduation_year} ${member.profession} ${member.subgroups || ""}`
       .toLowerCase();
 
     return value.includes(search.toLowerCase());
@@ -231,6 +232,15 @@ export default function CMSMembers() {
                         <span className="truncate">{member.current_city ? `${member.current_city}, ${member.current_country}` : "Location not set"}</span>
                       </div>
                     </div>
+                    {member.subgroups && (
+                      <div className="flex flex-wrap gap-1 mt-3">
+                        {member.subgroups.split(",").map((s: string) => s.trim()).filter(Boolean).map((sub: string) => (
+                          <Badge key={sub} variant="outline" className="text-[10px] py-0.5 px-2 bg-slate-50 text-slate-600 border-slate-200">
+                            {sub}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
