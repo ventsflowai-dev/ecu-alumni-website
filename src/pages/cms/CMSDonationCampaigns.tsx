@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, Save, X, Edit, Trash2, Heart, DollarSign, Target, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { ImageSelector } from "@/components/admin/ImageSelector";
 
 type Campaign = {
   id?: string;
@@ -60,37 +61,6 @@ export default function CMSDonationCampaigns() {
       .trim()
       .replace(/[^\w\s-]/g, "")
       .replace(/\s+/g, "-");
-  }
-
-  async function uploadCampaignImage(file: File) {
-    setUploading(true);
-
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${Date.now()}-${crypto.randomUUID()}.${fileExt}`;
-    const filePath = `campaigns/${fileName}`;
-
-    const { error } = await supabase.storage
-      .from(CAMPAIGN_BUCKET)
-      .upload(filePath, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
-
-    setUploading(false);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    const { data } = supabase.storage
-      .from(CAMPAIGN_BUCKET)
-      .getPublicUrl(filePath);
-
-    setForm((prev) => ({
-      ...prev,
-      featured_image_url: data.publicUrl,
-    }));
   }
 
   async function saveCampaign(e: React.FormEvent) {
@@ -191,36 +161,13 @@ export default function CMSDonationCampaigns() {
 
               <div className="space-y-2">
                 <Label>Campaign Image</Label>
-                <div className="flex items-center gap-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => document.getElementById('featured_image')?.click()}
-                    disabled={uploading}
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    {uploading ? "Uploading..." : "Upload Image"}
-                  </Button>
-                  <input
-                    id="featured_image"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) uploadCampaignImage(file);
-                    }}
-                  />
-                </div>
-                {form.featured_image_url && (
-                  <div className="mt-4 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 relative aspect-video">
-                    <img
-                      src={form.featured_image_url}
-                      alt="Campaign preview"
-                      className="absolute inset-0 w-full h-full object-cover"
-                    />
-                  </div>
-                )}
+                <ImageSelector
+                  bucketName={CAMPAIGN_BUCKET}
+                  folderPath="campaigns"
+                  currentImageUrl={form.featured_image_url}
+                  onImageSelected={(url) => setForm({ ...form, featured_image_url: url })}
+                  buttonText="Select Image"
+                />
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">

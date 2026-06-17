@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, Save, Edit, Trash2, Calendar, MapPin, Eye, ImageIcon, Loader2 } from "lucide-react";
+import { ImageSelector } from "@/components/admin/ImageSelector";
 
 type EventItem = {
   id: string;
@@ -138,32 +139,6 @@ export default function CMSGallery() {
       location: event?.location || form.location,
       cover_image_url: event?.featured_image_url || form.cover_image_url,
     });
-  }
-
-  async function uploadCoverImage(file: File) {
-    setUploading(true);
-
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${Date.now()}-${crypto.randomUUID()}.${fileExt}`;
-    const filePath = `covers/${fileName}`;
-
-    const { error } = await supabase.storage
-      .from(GALLERY_BUCKET)
-      .upload(filePath, file);
-
-    setUploading(false);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    const { data } = supabase.storage.from(GALLERY_BUCKET).getPublicUrl(filePath);
-
-    setForm((prev) => ({
-      ...prev,
-      cover_image_url: data.publicUrl,
-    }));
   }
 
   async function uploadImagesToAlbum(galleryEventId: string, files: File[]) {
@@ -387,41 +362,30 @@ export default function CMSGallery() {
                   />
                 </div>
 
-                {!form.event_id && (
+                {!form.event_id ? (
                   <div className="space-y-2">
                     <Label>Cover Image</Label>
-                    <div className="flex items-center gap-4">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => document.getElementById('cover_image')?.click()}
-                        disabled={uploading}
-                      >
-                        <Upload className="h-4 w-4 mr-2" />
-                        {uploading ? "Uploading..." : "Upload Cover"}
-                      </Button>
-                      <input
-                        id="cover_image"
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) uploadCoverImage(file);
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {form.cover_image_url && (
-                  <div className="mt-4 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 relative aspect-video">
-                    <img
-                      src={form.cover_image_url}
-                      alt="Cover preview"
-                      className="absolute inset-0 w-full h-full object-cover"
+                    <ImageSelector
+                      bucketName={GALLERY_BUCKET}
+                      folderPath="covers"
+                      currentImageUrl={form.cover_image_url}
+                      onImageSelected={(url) => setForm({ ...form, cover_image_url: url })}
+                      buttonText="Select Cover Image"
                     />
                   </div>
+                ) : (
+                  form.cover_image_url && (
+                    <div className="space-y-2">
+                      <Label>Cover Image Preview</Label>
+                      <div className="mt-4 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 relative aspect-video">
+                        <img
+                          src={form.cover_image_url}
+                          alt="Cover preview"
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  )
                 )}
 
                 <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
